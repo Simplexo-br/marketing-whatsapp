@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template Form View -->
+    <record id="view_whatsapp_template_form" model="ir.ui.view">
+        <field name="name">whatsapp.template.form</field>
+        <field name="model">whatsapp.template</field>
+        <field name="arch" type="xml">
+            <form string="Template de Mensagem WhatsApp">
+                <header>
+                    <field name="status" widget="statusbar" statusbar_visible="PENDING,APPROVED,REJECTED,PAUSED"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Nome Técnico do Template (Meta)"/>
+                        <h1>
+                            <field name="name" placeholder="Ex: promocao_primavera_01"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Identificação &amp; Idioma">
+                            <field name="account_id"/>
+                            <field name="language"/>
+                            <field name="category"/>
+                            <field name="meta_template_id"/>
+                        </group>
+                        <group string="Cabeçalho">
+                            <field name="header_type"/>
+                            <field name="header_text" invisible="header_type != 'text'"/>
+                            <field name="body_variables_count"/>
+                        </group>
+                    </group>
+
+                    <group string="Conteúdo da Mensagem">
+                        <group colspan="2">
+                            <field name="body_text" placeholder="Ex: Olá {{1}}, temos uma condição especial para a empresa {{2}}! Confira no link abaixo."/>
+                            <field name="footer_text" placeholder="Ex: Responda STOP para cancelar."/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Botões Interativos" name="buttons">
+                            <field name="button_ids">
+                                <list editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="button_type"/>
+                                    <field name="url" invisible="button_type != 'URL'"/>
+                                    <field name="phone_number" invisible="button_type != 'PHONE_NUMBER'"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Simulador Visual (WhatsApp Preview)" name="preview">
+                            <div class="o_preview_container" style="padding: 15px; display: flex; justify-content: center;">
+                                <field name="preview_html" widget="html" readonly="1" nolabel="1"/>
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Template Tree View -->
+    <record id="view_whatsapp_template_tree" model="ir.ui.view">
+        <field name="name">whatsapp.template.list</field>
+        <field name="model">whatsapp.template</field>
+        <field name="arch" type="xml">
+            <list string="Templates de WhatsApp">
+                <field name="name"/>
+                <field name="account_id"/>
+                <field name="language"/>
+                <field name="category"/>
+                <field name="header_type"/>
+                <field name="status" widget="badge" decoration-success="status == 'APPROVED'" decoration-warning="status == 'PENDING'" decoration-danger="status == 'REJECTED'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Template Search View -->
+    <record id="view_whatsapp_template_search" model="ir.ui.view">
+        <field name="name">whatsapp.template.search</field>
+        <field name="model">whatsapp.template</field>
+        <field name="arch" type="xml">
+            <search string="Pesquisar Templates">
+                <field name="name"/>
+                <field name="account_id"/>
+                <filter string="Aprovados" name="approved" domain="[('status', '=', 'APPROVED')]"/>
+                <group expand="0" string="Agrupar Por">
+                    <filter string="Conta" name="group_account" context="{'group_by': 'account_id'}"/>
+                    <filter string="Status" name="group_status" context="{'group_by': 'status'}"/>
+                    <filter string="Categoria" name="group_category" context="{'group_by': 'category'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_whatsapp_template_tree" model="ir.actions.act_window">
+        <field name="name">Templates de WhatsApp</field>
+        <field name="res_model">whatsapp.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_whatsapp_template_search"/>
+    </record>
+</odoo>

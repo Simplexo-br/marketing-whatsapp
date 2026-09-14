@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record model="ir.module.category" id="module_category_marketing_whatsapp">
+        <field name="name">Marketing WhatsApp</field>
+        <field name="description">Gerenciamento e envio de campanhas de WhatsApp via Meta Cloud API</field>
+        <field name="sequence">22</field>
+    </record>
+
+    <record id="group_marketing_whatsapp_user" model="res.groups">
+        <field name="name">Usuário</field>
+        <field name="category_id" ref="module_category_marketing_whatsapp"/>
+        <field name="implied_ids" eval="[(4, ref('base.group_user')), (4, ref('mass_mailing.group_mass_mailing_user'))]"/>
+    </record>
+
+    <record id="group_marketing_whatsapp_manager" model="res.groups">
+        <field name="name">Administrador</field>
+        <field name="category_id" ref="module_category_marketing_whatsapp"/>
+        <field name="implied_ids" eval="[(4, ref('group_marketing_whatsapp_user')), (4, ref('mass_mailing.group_mass_mailing_campaign'))]"/>
+        <field name="users" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+    </record>
+</odoo>

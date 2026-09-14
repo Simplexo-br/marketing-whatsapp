@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form View -->
+    <record id="view_whatsapp_account_form" model="ir.ui.view">
+        <field name="name">whatsapp.account.form</field>
+        <field name="model">whatsapp.account</field>
+        <field name="arch" type="xml">
+            <form string="Conta WhatsApp Business">
+                <header>
+                    <button name="action_test_connection" string="Testar Conexão com a Meta" type="object" class="btn-primary" icon="fa-plug"/>
+                    <button name="action_sync_templates" string="Sincronizar Templates da Meta" type="object" class="btn-secondary" icon="fa-refresh"/>
+                    <field name="status" widget="statusbar" statusbar_visible="disconnected,connected,error"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="action" name="%(action_whatsapp_template_tree)d" icon="fa-file-text-o" context="{'search_default_account_id': id}">
+                            <field string="Templates" name="template_count" widget="statinfo"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <label for="name" string="Identificação da Conta"/>
+                        <h1>
+                            <field name="name" placeholder="Ex: AIOS Principal - WhatsApp Marketing"/>
+                        </h1>
+                    </div>
+
+                    <group>
+                        <group string="Credenciais Meta Cloud API">
+                            <field name="phone_number_id" placeholder="Ex: 104829182749102"/>
+                            <field name="waba_id" placeholder="Ex: 4045641195567198"/>
+                            <field name="token" password="True" placeholder="EAAB... (System User Token)"/>
+                            <field name="phone_number" readonly="1"/>
+                        </group>
+                        <group string="Métricas &amp; Saúde do Número (Meta)">
+                            <field name="quality_rating" widget="badge" decoration-success="quality_rating == 'GREEN'" decoration-warning="quality_rating == 'YELLOW'" decoration-danger="quality_rating == 'RED'"/>
+                            <field name="messaging_limit_tier"/>
+                            <field name="last_connection_test"/>
+                        </group>
+                    </group>
+
+                    <group string="Informações do App Meta" groups="base.group_no_one">
+                        <group>
+                            <field name="app_id"/>
+                            <field name="business_id"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Templates Sincronizados" name="templates">
+                            <field name="template_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="category"/>
+                                    <field name="language"/>
+                                    <field name="status" widget="badge" decoration-success="status == 'APPROVED'" decoration-warning="status == 'PENDING'" decoration-danger="status == 'REJECTED'"/>
+                                    <field name="header_type"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Logs de Erro" name="logs" invisible="not error_message">
+                            <field name="error_message" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_whatsapp_account_tree" model="ir.ui.view">
+        <field name="name">whatsapp.account.list</field>
+        <field name="model">whatsapp.account</field>
+        <field name="arch" type="xml">
+            <list string="Contas de WhatsApp">
+                <field name="name"/>
+                <field name="phone_number"/>
+                <field name="status" widget="badge" decoration-success="status == 'connected'" decoration-danger="status == 'error'"/>
+                <field name="quality_rating" widget="badge" decoration-success="quality_rating == 'GREEN'" decoration-warning="quality_rating == 'YELLOW'" decoration-danger="quality_rating == 'RED'"/>
+                <field name="messaging_limit_tier"/>
+                <field name="template_count"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_whatsapp_account" model="ir.actions.act_window">
+        <field name="name">Contas de WhatsApp</field>
+        <field name="res_model">whatsapp.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Cadastre sua primeira conta oficial do WhatsApp Business!
+            </p>
+            <p>
+                Insira o <b>Phone Number ID</b>, <b>WABA ID</b> e o <b>Token Permanente</b> obtidos no Meta for Developers (App AIOS).
+            </p>
+        </field>
+    </record>
+</odoo>

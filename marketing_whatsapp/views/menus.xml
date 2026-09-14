@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Top Level App Menu -->
+    <menuitem id="marketing_whatsapp_root"
+              name="Marketing WhatsApp"
+              web_icon="marketing_whatsapp,static/description/icon.png"
+              sequence="116"
+              groups="group_marketing_whatsapp_user"/>
+
+    <!-- Campanhas -->
+    <menuitem id="menu_whatsapp_campaigns"
+              name="Campanhas"
+              parent="marketing_whatsapp_root"
+              sequence="10"/>
+
+    <menuitem id="menu_whatsapp_mailing_all"
+              name="Campanhas de WhatsApp"
+              parent="menu_whatsapp_campaigns"
+              action="action_mailing_mailing_whatsapp"
+              sequence="1"/>
+
+    <!-- Listas & Contatos -->
+    <menuitem id="menu_whatsapp_audiences"
+              name="Listas de Contatos"
+              parent="marketing_whatsapp_root"
+              sequence="20"/>
+
+    <menuitem id="menu_whatsapp_mailing_lists"
+              name="Listas de Disparo"
+              parent="menu_whatsapp_audiences"
+              action="mass_mailing.action_view_mass_mailing_lists"
+              sequence="1"/>
+
+    <menuitem id="menu_whatsapp_mailing_contacts"
+              name="Todos os Contatos"
+              parent="menu_whatsapp_audiences"
+              action="mass_mailing.action_view_mass_mailing_contacts"
+              sequence="2"/>
+
+    <menuitem id="menu_whatsapp_import_wizard"
+              name="Importar Planilha (.CSV / .XLSX)"
+              parent="menu_whatsapp_audiences"
+              action="action_wizard_import_whatsapp_contacts"
+              sequence="3"/>
+
+    <!-- Templates -->
+    <menuitem id="menu_whatsapp_templates"
+              name="Templates WhatsApp"
+              parent="marketing_whatsapp_root"
+              action="action_whatsapp_template_tree"
+              sequence="30"/>
+
+    <!-- Relatórios & Entregas -->
+    <menuitem id="menu_whatsapp_reporting"
+              name="Relatórios"
+              parent="marketing_whatsapp_root"
+              sequence="40"
+              groups="group_marketing_whatsapp_manager"/>
+
+    <menuitem id="menu_whatsapp_traces"
+              name="Rastreamento de Entregas"
+              parent="menu_whatsapp_reporting"
+              action="mass_mailing.mailing_trace_action"
+              sequence="1"/>
+
+    <menuitem id="menu_whatsapp_phone_blacklist"
+              name="Telefones em Blacklist (Opt-Out)"
+              parent="menu_whatsapp_reporting"
+              action="phone_validation.phone_blacklist_action"
+              sequence="2"/>
+
+    <!-- Configurações -->
+    <menuitem id="menu_whatsapp_configuration"
+              name="Configurações"
+              parent="marketing_whatsapp_root"
+              sequence="100"
+              groups="group_marketing_whatsapp_manager"/>
+
+    <menuitem id="menu_whatsapp_accounts"
+              name="Contas de WhatsApp (Meta)"
+              parent="menu_whatsapp_configuration"
+              action="action_whatsapp_account"
+              sequence="1"/>
+
+    <menuitem id="menu_whatsapp_general_settings"
+              name="Ajustes Gerais &amp; Anti-Ban"
+              parent="menu_whatsapp_configuration"
+              action="action_whatsapp_configuration"
+              sequence="2"/>
+</odoo>
