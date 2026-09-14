@@ -3,15 +3,17 @@
     'name': 'Marketing WhatsApp',
     'version': '18.0.1.0.0',
     'category': 'Marketing/WhatsApp',
-    'summary': 'Disparos em massa de campanhas de WhatsApp via Meta Cloud API Oficial com proteção Anti-Ban e Importador de Planilhas',
+    'summary': 'Disparos em massa de campanhas de WhatsApp via Meta Cloud API Oficial com planos de assinatura, faturamento automático e proteção Anti-Ban',
     'description': """
-Marketing WhatsApp para Odoo 18
-===============================
+Marketing WhatsApp para Odoo 18 (Comercialização Simplexo)
+==========================================================
 Módulo completo e profissional para criação e disparo em massa de campanhas de WhatsApp marketing através da API oficial da Meta (Cloud API v20+).
 
 Principais Recursos:
 -------------------
 * Interface idêntica ao Marketing por E-mail e Marketing por SMS.
+* Modelo Comercial SaaS: 3 Planos de Assinatura (Starter, Pro, Enterprise) com limites de mensagens e cobrança automática.
+* Integração com Faturamento Odoo: Emissão automática de faturas de clientes e gestão de ciclo de renovação.
 * Conexão direta com a Meta Cloud API (App AIOS) - sem custos adicionais de intermediários.
 * Importador de planilhas Excel/CSV (Nome, Empresa, Telefone) com higienização internacional E.164.
 * Segmentação flexível: Disparo para CRM (Leads/Oportunidades), Contatos/Parceiros ou Listas de Disparo.
@@ -25,6 +27,7 @@ Principais Recursos:
     'depends': [
         'base',
         'mail',
+        'account',
         'mass_mailing',
         'phone_validation',
         'crm',
@@ -39,9 +42,11 @@ Principais Recursos:
         'security/ir.model.access.csv',
 
         # Data & Cron
+        'data/whatsapp_subscription_plan_data.xml',
         'data/ir_cron_data.xml',
 
         # Views
+        'views/whatsapp_subscription_views.xml',
         'views/whatsapp_account_views.xml',
         'views/whatsapp_template_views.xml',
         'views/mailing_mailing_views.xml',

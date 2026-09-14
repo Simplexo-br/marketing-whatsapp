@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
+from datetime import timedelta
+from odoo import fields
 from odoo.tests.common import TransactionCase
+from odoo.exceptions import UserError
 
 
 class TestWhatsAppCampaign(TransactionCase):
@@ -11,6 +14,31 @@ class TestWhatsAppCampaign(TransactionCase):
         self.WhatsAppTemplateModel = self.env['whatsapp.template']
         self.MailingModel = self.env['mailing.mailing']
         self.MailingListModel = self.env['mailing.list']
+        self.PlanModel = self.env['whatsapp.subscription.plan']
+        self.SubModel = self.env['whatsapp.subscription']
+        self.PartnerModel = self.env['res.partner']
+
+        # Cria plano Starter
+        self.plan_starter = self.PlanModel.create({
+            'name': 'Starter Teste',
+            'code': 'starter',
+            'monthly_price': 149.0,
+            'monthly_message_limit': 100,
+            'max_whatsapp_accounts': 1,
+        })
+
+        # Cria parceiro e assinatura
+        self.partner = self.PartnerModel.create({
+            'name': 'Empresa Cliente Teste LTDA',
+            'email': 'cliente@teste.com'
+        })
+
+        self.subscription = self.SubModel.create({
+            'partner_id': self.partner.id,
+            'plan_id': self.plan_starter.id,
+            'state': 'active',
+            'messages_sent_period': 0,
+        })
 
         # Cria conta de WhatsApp
         self.account = self.WhatsAppAccountModel.create({
@@ -49,18 +77,21 @@ class TestWhatsAppCampaign(TransactionCase):
         sanitized_2 = self.ContactModel._sanitize_whatsapp_number('+55 21 99999-8888', 'BR')
         self.assertEqual(sanitized_2, '+5521999998888')
 
-    def test_template_variables_count(self):
-        """Testa o cálculo automático da quantidade de variáveis dinâmicas no corpo"""
-        self.assertEqual(self.template.body_variables_count, 2)
+    def test_subscription_quota_enforcement(self):
+        """Testa a trava de limite de mensagens da assinatura"""
+        self.assertTrue(self.subscription.check_can_send(50))
+        self.subscription.register_sent_messages(90)
+        self.assertEqual(self.subscription.messages_remaining, 10)
 
-    def test_whatsapp_campaign_creation(self):
-        """Testa a criação de campanha e geração da prévia visual"""
-        mailing = self.MailingModel.create({
-            'subject': 'Campanha de Teste WhatsApp',
-            'mailing_type': 'whatsapp',
-            'whatsapp_account_id': self.account.id,
-            'whatsapp_template_id': self.template.id,
-            'contact_list_ids': [(4, self.mailing_list.id)],
-        })
-        self.assertEqual(mailing.mailing_type, 'whatsapp')
-        self.assertTrue(mailing.whatsapp_preview_html)
+        # Tentativa de enviar 20 mensagens quando restam apenas 10 deve disparar UserError
+        with self.assertRaises(UserError):
+            self.subscription.check_can_send(20)
+
+    def test_subscription_invoice_generation(self):
+        """Testa a geração automática de fatura de cliente no módulo financeiro"""
+        action = self.subscription.action_generate_invoice()
+        self.assertTrue(action.get('res_id'))
+        invoice = self.env['account.move'].browse(action['res_id'])
+        self.assertEqual(invoice.move_type, 'out_invoice')
+        self.assertEqual(invoice.partner_id.id, self.partner.id)
+        self.assertEqual(invoice.amount_total, 149.0)

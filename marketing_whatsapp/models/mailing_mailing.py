@@ -95,6 +95,13 @@ class MailingMailing(models.Model):
             mailing.whatsapp_read_count = len(traces.filtered(lambda t: t.whatsapp_status == 'read'))
             mailing.whatsapp_failed_count = len(traces.filtered(lambda t: t.whatsapp_status == 'failed'))
 
+    def _get_active_subscription(self):
+        """Busca assinatura de WhatsApp ativa associada à empresa do usuário"""
+        return self.env['whatsapp.subscription'].sudo().search([
+            ('company_id', '=', self.company_id.id),
+            ('state', '=', 'active')
+        ], limit=1)
+
     def action_test_whatsapp(self):
         self.ensure_one()
         return {
@@ -115,6 +122,12 @@ class MailingMailing(models.Model):
             if not mailing.whatsapp_account_id or not mailing.whatsapp_template_id:
                 raise UserError(_("Selecione uma conta de WhatsApp e um template aprovado antes de disparar."))
             
+            # Validação de Assinatura & Quota
+            sub = mailing._get_active_subscription()
+            recipients = mailing._get_whatsapp_recipients()
+            if sub:
+                sub.check_can_send(len(recipients))
+
             # Gera os traces se não existirem
             mailing._create_whatsapp_traces()
             mailing.write({'state': 'sending'})
@@ -122,11 +135,17 @@ class MailingMailing(models.Model):
             mailing._process_whatsapp_queue(batch_limit=50)
 
     def action_put_in_queue(self):
-        # Override para tratar mailing_type == 'whatsapp'
         whatsapp_mailings = self.filtered(lambda m: m.mailing_type == 'whatsapp')
         for mailing in whatsapp_mailings:
             if not mailing.whatsapp_account_id or not mailing.whatsapp_template_id:
                 raise UserError(_("Selecione uma conta de WhatsApp e um template aprovado antes de colocar na fila."))
+            
+            # Validação de Quota
+            sub = mailing._get_active_subscription()
+            recipients = mailing._get_whatsapp_recipients()
+            if sub:
+                sub.check_can_send(len(recipients))
+
             mailing._create_whatsapp_traces()
             mailing.write({'state': 'in_queue'})
         return super(MailingMailing, self - whatsapp_mailings).action_put_in_queue()
@@ -207,7 +226,6 @@ class MailingMailing(models.Model):
         ], limit=batch_limit)
 
         if not pending_traces:
-            # Se não há mais mensagens na fila, marca como enviado
             if self.state in ['in_queue', 'sending']:
                 self.write({'state': 'done'})
             return
@@ -221,11 +239,12 @@ class MailingMailing(models.Model):
             "Content-Type": "application/json"
         }
 
-        # Obter lista de números na Blacklist
         blacklisted_records = self.env['phone.blacklist'].sudo().search([])
         blacklisted_numbers = set(blacklisted_records.mapped('number'))
 
         delay = float(self.env['ir.config_parameter'].sudo().get_param('marketing_whatsapp.delay_between_messages', 0.1))
+        sub = self._get_active_subscription()
+        sent_success_count = 0
 
         for trace in pending_traces:
             dest_phone = trace.whatsapp_recipient_number
@@ -239,7 +258,6 @@ class MailingMailing(models.Model):
                 })
                 continue
 
-            # Constrói parâmetros do payload
             target_record = self.env[trace.model].browse(trace.res_id) if trace.model and trace.res_id else False
             payload = self._build_meta_payload(account, template, clean_digits, target_record)
 
@@ -256,6 +274,7 @@ class MailingMailing(models.Model):
                         'whatsapp_sent_date': fields.Datetime.now(),
                         'whatsapp_error_message': False,
                     })
+                    sent_success_count += 1
                 else:
                     err = res_data.get('error', {})
                     trace.write({
@@ -273,7 +292,10 @@ class MailingMailing(models.Model):
             if delay > 0:
                 time.sleep(delay)
 
-        # Checa se restam pendentes
+        # Atualiza consumo no plano de assinatura
+        if sub and sent_success_count > 0:
+            sub.register_sent_messages(count=sent_success_count)
+
         remaining = TraceModel.search_count([
             ('mass_mailing_id', '=', self.id),
             ('whatsapp_status', '=', 'outgoing')
@@ -282,10 +304,8 @@ class MailingMailing(models.Model):
             self.write({'state': 'done'})
 
     def _build_meta_payload(self, account, template, clean_phone, target_record=False):
-        """Monta o payload JSON da Meta Graph API para envio de templates aprovados"""
         components = []
 
-        # 1. Cabeçalho de Mídia
         if template.header_type in ['image', 'document', 'video']:
             media_param = {}
             if self.whatsapp_media_url:
@@ -304,7 +324,6 @@ class MailingMailing(models.Model):
                     }]
                 })
 
-        # 2. Corpo (Parâmetros {{1}}, {{2}}...)
         if template.body_variables_count > 0:
             body_params = []
             for i in range(1, template.body_variables_count + 1):

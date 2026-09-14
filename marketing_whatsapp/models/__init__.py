@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from . import res_config_settings
+from . import whatsapp_subscription_plan
+from . import whatsapp_subscription
 from . import whatsapp_account
 from . import whatsapp_template
 from . import whatsapp_template_button

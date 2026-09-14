@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================== -->
+    <!-- PLANOS DE ASSINATURA                           -->
+    <!-- ============================================== -->
+    <record id="view_whatsapp_subscription_plan_form" model="ir.ui.view">
+        <field name="name">whatsapp.subscription.plan.form</field>
+        <field name="model">whatsapp.subscription.plan</field>
+        <field name="arch" type="xml">
+            <form string="Plano de Assinatura">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="action" name="%(action_whatsapp_subscription)d" icon="fa-users" context="{'search_default_plan_id': id}">
+                            <field string="Assinantes" name="subscription_count" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name" string="Nome do Plano"/>
+                        <h1>
+                            <field name="name" placeholder="Ex: Starter (Básico)"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Preços &amp; Faturamento">
+                            <field name="code"/>
+                            <field name="monthly_price" widget="monetary"/>
+                            <field name="yearly_price" widget="monetary"/>
+                            <field name="active"/>
+                        </group>
+                        <group string="Limites de Envio &amp; Contas">
+                            <field name="monthly_message_limit"/>
+                            <field name="max_whatsapp_accounts"/>
+                        </group>
+                    </group>
+                    <group string="Recursos Inclusos">
+                        <group>
+                            <field name="allow_rich_media"/>
+                            <field name="allow_custom_variables"/>
+                        </group>
+                        <group>
+                            <field name="allow_advanced_carousels"/>
+                            <field name="priority_support"/>
+                        </group>
+                    </group>
+                    <group string="Descrição Comercial">
+                        <field name="description" placeholder="Resumo dos benefícios deste plano..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_whatsapp_subscription_plan_tree" model="ir.ui.view">
+        <field name="name">whatsapp.subscription.plan.list</field>
+        <field name="model">whatsapp.subscription.plan</field>
+        <field name="arch" type="xml">
+            <list string="Planos de Assinatura">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="monthly_price" widget="monetary"/>
+                <field name="monthly_message_limit"/>
+                <field name="max_whatsapp_accounts"/>
+                <field name="subscription_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_whatsapp_subscription_plan" model="ir.actions.act_window">
+        <field name="name">Planos Comerciais</field>
+        <field name="res_model">whatsapp.subscription.plan</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- ============================================== -->
+    <!-- ASSINATURAS DOS CLIENTES                       -->
+    <!-- ============================================== -->
+    <record id="view_whatsapp_subscription_form" model="ir.ui.view">
+        <field name="name">whatsapp.subscription.form</field>
+        <field name="model">whatsapp.subscription</field>
+        <field name="arch" type="xml">
+            <form string="Assinatura de WhatsApp">
+                <header>
+                    <button name="action_activate" string="Ativar Assinatura" type="object" class="btn-success" invisible="state == 'active'"/>
+                    <button name="action_generate_invoice" string="Gerar Fatura Avulsa" type="object" class="btn-primary" icon="fa-money"/>
+                    <button name="action_suspend" string="Suspender" type="object" class="btn-warning" invisible="state != 'active'"/>
+                    <button name="action_cancel" string="Cancelar" type="object" invisible="state in ['draft', 'canceled']"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,active,pending_payment,suspended,canceled"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Código da Assinatura"/>
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Dados do Contrato">
+                            <field name="partner_id" options="{'no_create': False}"/>
+                            <field name="plan_id" options="{'no_create': True}"/>
+                            <field name="billing_interval"/>
+                            <field name="recurring_price" widget="monetary"/>
+                        </group>
+                        <group string="Vigência &amp; Cobrança Automática">
+                            <field name="current_period_start"/>
+                            <field name="current_period_end"/>
+                            <field name="auto_invoice"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+
+                    <group string="Consumo de Mensagens no Ciclo Atual">
+                        <group>
+                            <field name="messages_limit"/>
+                            <field name="messages_sent_period"/>
+                        </group>
+                        <group>
+                            <field name="messages_remaining"/>
+                            <field name="usage_percentage" widget="progressbar"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Histórico de Faturas" name="invoices">
+                            <field name="invoice_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="invoice_date"/>
+                                    <field name="amount_total" widget="monetary"/>
+                                    <field name="payment_state" widget="badge" decoration-success="payment_state == 'paid'" decoration-danger="payment_state == 'not_paid'"/>
+                                    <field name="state" widget="badge"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_whatsapp_subscription_tree" model="ir.ui.view">
+        <field name="name">whatsapp.subscription.list</field>
+        <field name="model">whatsapp.subscription</field>
+        <field name="arch" type="xml">
+            <list string="Assinaturas de Clientes">
+                <field name="name"/>
+                <field name="partner_id"/>
+                <field name="plan_id"/>
+                <field name="billing_interval"/>
+                <field name="recurring_price" widget="monetary"/>
+                <field name="messages_sent_period"/>
+                <field name="messages_remaining"/>
+                <field name="usage_percentage" widget="progressbar"/>
+                <field name="state" widget="badge" decoration-success="state == 'active'" decoration-warning="state == 'pending_payment'" decoration-danger="state == 'suspended'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_whatsapp_subscription" model="ir.actions.act_window">
+        <field name="name">Assinaturas de Clientes</field>
+        <field name="res_model">whatsapp.subscription</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Crie a primeira assinatura de cliente para o Marketing WhatsApp!
+            </p>
+            <p>
+                Associe um cliente a um dos 3 planos (Starter, Pro ou Enterprise) para habilitar disparos automáticos e faturamento recorrente.
+            </p>
+        </field>
+    </record>
+</odoo>

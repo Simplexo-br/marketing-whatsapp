@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- 🥉 Plano Starter (Básico) -->
+        <record id="plan_whatsapp_starter" model="whatsapp.subscription.plan">
+            <field name="name">Starter (Básico)</field>
+            <field name="code">starter</field>
+            <field name="sequence">10</field>
+            <field name="monthly_price">149.00</field>
+            <field name="yearly_price">1490.00</field>
+            <field name="monthly_message_limit">5000</field>
+            <field name="max_whatsapp_accounts">1</field>
+            <field name="allow_rich_media" eval="True"/>
+            <field name="allow_advanced_carousels" eval="False"/>
+            <field name="allow_custom_variables" eval="True"/>
+            <field name="priority_support" eval="False"/>
+            <field name="description">Ideal para pequenas empresas e consultórios. 5.000 mensagens/mês, 1 número conectado, envio de imagens e importador de planilhas.</field>
+        </record>
+
+        <!-- 🥈 Plano Pro (Crescimento) -->
+        <record id="plan_whatsapp_pro" model="whatsapp.subscription.plan">
+            <field name="name">Pro (Crescimento)</field>
+            <field name="code">pro</field>
+            <field name="sequence">20</field>
+            <field name="monthly_price">349.00</field>
+            <field name="yearly_price">3490.00</field>
+            <field name="monthly_message_limit">30000</field>
+            <field name="max_whatsapp_accounts">3</field>
+            <field name="allow_rich_media" eval="True"/>
+            <field name="allow_advanced_carousels" eval="True"/>
+            <field name="allow_custom_variables" eval="True"/>
+            <field name="priority_support" eval="False"/>
+            <field name="description">Para empresas em crescimento e e-commerces. 30.000 mensagens/mês, até 3 números, suporte a Carrosséis e formulários interativos.</field>
+        </record>
+
+        <!-- 🥇 Plano Enterprise (Escala / Ilimitado) -->
+        <record id="plan_whatsapp_enterprise" model="whatsapp.subscription.plan">
+            <field name="name">Enterprise (Escala / Ilimitado)</field>
+            <field name="code">enterprise</field>
+            <field name="sequence">30</field>
+            <field name="monthly_price">799.00</field>
+            <field name="yearly_price">7990.00</field>
+            <field name="monthly_message_limit">0</field>
+            <field name="max_whatsapp_accounts">0</field>
+            <field name="allow_rich_media" eval="True"/>
+            <field name="allow_advanced_carousels" eval="True"/>
+            <field name="allow_custom_variables" eval="True"/>
+            <field name="priority_support" eval="True"/>
+            <field name="description">Para grandes operações corporativas e agências. Mensagens e números ilimitados, alta vazão (100k+/dia) e suporte VIP dedicado.</field>
+        </record>
+    </data>
+</odoo>

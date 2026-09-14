@@ -50,6 +50,25 @@
               action="action_whatsapp_template_tree"
               sequence="30"/>
 
+    <!-- 💳 Planos & Assinaturas (Comercialização Simplexo) -->
+    <menuitem id="menu_whatsapp_subscriptions_root"
+              name="Planos &amp; Faturamento"
+              parent="marketing_whatsapp_root"
+              sequence="35"
+              groups="group_marketing_whatsapp_manager"/>
+
+    <menuitem id="menu_whatsapp_subscriptions_list"
+              name="Assinaturas de Clientes"
+              parent="menu_whatsapp_subscriptions_root"
+              action="action_whatsapp_subscription"
+              sequence="1"/>
+
+    <menuitem id="menu_whatsapp_plans_list"
+              name="Planos de Assinatura"
+              parent="menu_whatsapp_subscriptions_root"
+              action="action_whatsapp_subscription_plan"
+              sequence="2"/>
+
     <!-- Relatórios & Entregas -->
     <menuitem id="menu_whatsapp_reporting"
               name="Relatórios"
