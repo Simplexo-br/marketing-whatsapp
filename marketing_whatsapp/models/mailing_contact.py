@@ -16,16 +16,38 @@ class MailingContact(models.Model):
     custom_var2 = fields.Char(string="Variável Personalizada 2")
     custom_var3 = fields.Char(string="Variável Personalizada 3")
 
-    @api.depends('mobile', 'country_id')
+    # Campos de Rastreamento de Status WhatsApp
+    wa_status = fields.Selection([
+        ('not_sent', 'Não Enviado'),
+        ('sent', 'Enviado'),
+        ('delivered', 'Entregue'),
+        ('read', 'Visualizado'),
+        ('replied', 'Respondido / Engajado'),
+        ('opt_out', 'Opt-Out (Respondeu 2 / Sair)'),
+    ], string="Status WhatsApp", default='not_sent', index=True)
+
+    wa_status_sent = fields.Boolean(string="Enviado", default=False, index=True)
+    wa_status_delivered = fields.Boolean(string="Entregue", default=False, index=True)
+    wa_status_read = fields.Boolean(string="Visualizado", default=False, index=True)
+    wa_status_replied = fields.Boolean(string="Respondido", default=False, index=True)
+    wa_status_opt_out = fields.Boolean(string="Opt-Out (Respondeu 2)", default=False, index=True)
+
+    wa_sent_date = fields.Datetime(string="Data de Envio")
+    wa_read_date = fields.Datetime(string="Data de Visualização")
+    wa_replied_date = fields.Datetime(string="Data de Resposta")
+    wa_opt_out_date = fields.Datetime(string="Data do Opt-Out")
+    wa_last_response = fields.Text(string="Última Resposta")
+
+    @api.depends('country_id')
     def _compute_mobile_whatsapp(self):
         for contact in self:
-            raw_phone = contact.mobile or getattr(contact, 'phone', False) or getattr(contact, 'phone_sanitized', False)
+            raw_phone = getattr(contact, 'mobile', False) or getattr(contact, 'phone', False) or getattr(contact, 'phone_sanitized', False)
             if not raw_phone:
                 contact.mobile_whatsapp = False
                 continue
 
-            # Tenta sanitizar para E.164
-            sanitized = contact._sanitize_whatsapp_number(raw_phone, contact.country_id.code or 'BR')
+            country_code = contact.country_id.code if contact.country_id else 'BR'
+            sanitized = contact._sanitize_whatsapp_number(raw_phone, country_code)
             contact.mobile_whatsapp = sanitized or raw_phone
 
     @api.model
@@ -47,3 +69,105 @@ class MailingContact(models.Model):
                 return f"+55{digits}"
             return f"+{digits}"
         return False
+
+    @api.model
+    def _cron_sync_whatsapp_contact_statuses(self):
+        """Cron executado a cada 1 hora para sincronizar o status de Envio, Visualização, Respostas e Opt-Out dos contatos."""
+        _logger.info("Iniciando sincronização horária de status dos contatos WhatsApp...")
+        
+        # 1. Sincronizar via mailing.trace (se existirem traces de WhatsApp)
+        if 'mailing.trace' in self.env:
+            traces = self.env['mailing.trace'].search([('trace_type', '=', 'whatsapp')])
+            for tr in traces:
+                if not tr.contact_id:
+                    continue
+                contact = tr.contact_id
+                vals = {}
+                if tr.sent_datetime and not contact.wa_status_sent:
+                    vals['wa_status_sent'] = True
+                    vals['wa_sent_date'] = tr.sent_datetime
+                    vals['wa_status'] = 'sent'
+                if tr.delivered_datetime and not contact.wa_status_delivered:
+                    vals['wa_status_delivered'] = True
+                    vals['wa_status'] = 'delivered'
+                if tr.open_datetime and not contact.wa_status_read:
+                    vals['wa_status_read'] = True
+                    vals['wa_read_date'] = tr.open_datetime
+                    vals['wa_status'] = 'read'
+                if tr.reply_datetime and not contact.wa_status_replied:
+                    vals['wa_status_replied'] = True
+                    vals['wa_replied_date'] = tr.reply_datetime
+                    vals['wa_status'] = 'replied'
+                if vals:
+                    contact.write(vals)
+
+        # 2. Sincronizar via simplexo.aios.whatsapp.conversation (central multicanal do Odoo)
+        if 'simplexo.aios.whatsapp.conversation' in self.env:
+            convs = self.env['simplexo.aios.whatsapp.conversation'].search([])
+            for conv in convs:
+                phone = conv.customer_phone or conv.customer_wa_id
+                if not phone:
+                    continue
+                clean_phone = ''.join(c for c in phone if c.isdigit())
+                if len(clean_phone) >= 8:
+                    domain = ['|', ('mobile_whatsapp', 'ilike', clean_phone[-8:]), ('mobile', 'ilike', clean_phone[-8:])]
+                    matching_contacts = self.search(domain)
+                    for contact in matching_contacts:
+                        vals = {}
+                        # Checa se houve mensagens enviadas
+                        outbound_msgs = conv.message_ids.filtered(lambda m: m.direction == 'outbound')
+                        if outbound_msgs:
+                            vals['wa_status_sent'] = True
+                            if not contact.wa_sent_date and outbound_msgs[0].create_date:
+                                vals['wa_sent_date'] = outbound_msgs[0].create_date
+                            if any(m.state in ['delivered', 'read'] for m in outbound_msgs):
+                                vals['wa_status_delivered'] = True
+                            if any(m.state == 'read' or m.read_at for m in outbound_msgs):
+                                vals['wa_status_read'] = True
+                                vals['wa_read_date'] = outbound_msgs.filtered(lambda m: m.read_at)[:1].read_at or fields.Datetime.now()
+                        
+                        # Checa se houve respostas recebidas (inbound)
+                        inbound_msgs = conv.message_ids.filtered(lambda m: m.direction == 'inbound')
+                        if inbound_msgs:
+                            last_msg = inbound_msgs[-1]
+                            last_body = (last_msg.body or '').strip().lower()
+                            vals['wa_replied_date'] = last_msg.create_date or fields.Datetime.now()
+                            vals['wa_last_response'] = last_msg.body[:200] if last_msg.body else ''
+
+                            # Identifica se o cliente respondeu "2" para Opt-Out / Não receber mais mensagens
+                            opt_out_keywords = ['2', '2.', 'opcao 2', 'opção 2', 'parar', 'stop', 'sair', 'cancelar', 'nao', 'não', 'remover', 'descadastrar']
+                            if last_body in opt_out_keywords or last_body.startswith('2'):
+                                vals['wa_status_opt_out'] = True
+                                vals['wa_opt_out_date'] = last_msg.create_date or fields.Datetime.now()
+                                vals['wa_status'] = 'opt_out'
+                                vals['wa_status_replied'] = False
+                                
+                                # Adiciona automaticamente na Blacklist do Odoo
+                                if 'phone.blacklist' in self.env:
+                                    phone_to_block = contact.mobile_whatsapp or contact.mobile
+                                    if phone_to_block:
+                                        sanitized_block = ''.join(c for c in phone_to_block if c.isdigit() or c == '+')
+                                        existing_bl = self.env['phone.blacklist'].sudo().search([('number', '=', sanitized_block)])
+                                        if not existing_bl:
+                                            try:
+                                                self.env['phone.blacklist'].sudo().create({'number': sanitized_block})
+                                                _logger.info(f"Número {sanitized_block} inserido na Blacklist por responder 2 (Opt-Out).")
+                                            except Exception as bl_err:
+                                                _logger.warning(f"Erro ao adicionar na blacklist: {bl_err}")
+                            else:
+                                vals['wa_status_replied'] = True
+                                vals['wa_status'] = 'replied'
+
+                        # Se não for opt_out nem replied, ajusta conforme leitura/entrega/envio
+                        if not vals.get('wa_status'):
+                            if vals.get('wa_status_read'):
+                                vals['wa_status'] = 'read'
+                            elif vals.get('wa_status_delivered'):
+                                vals['wa_status'] = 'delivered'
+                            elif vals.get('wa_status_sent'):
+                                vals['wa_status'] = 'sent'
+
+                        if vals:
+                            contact.write(vals)
+
+        _logger.info("Sincronização horária de status dos contatos WhatsApp concluída.")

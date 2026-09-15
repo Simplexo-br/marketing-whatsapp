@@ -46,6 +46,7 @@ Principais Recursos:
         'data/ir_cron_data.xml',
 
         # Views
+        'views/whatsapp_dashboard_views.xml',
         'views/whatsapp_subscription_views.xml',
         'views/whatsapp_template_views.xml',
         'views/whatsapp_account_views.xml',
@@ -60,6 +61,11 @@ Principais Recursos:
         # Menus (carregados por último para ter todas as ações disponíveis)
         'views/menus.xml',
     ],
+    'assets': {
+        'web.assets_backend': [
+            'marketing_whatsapp/static/src/dashboard/**/*',
+        ],
+    },
     'demo': [],
     'images': ['static/description/icon.png'],
     'installable': True,

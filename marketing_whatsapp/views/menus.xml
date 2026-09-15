@@ -7,11 +7,19 @@
               sequence="116"
               groups="group_marketing_whatsapp_user"/>
 
+    <!-- Dashboard Geral -->
+    <menuitem id="menu_whatsapp_dashboard"
+              name="Dashboard"
+              parent="marketing_whatsapp_root"
+              action="action_whatsapp_dashboard"
+              sequence="1"/>
+
     <!-- Campanhas -->
     <menuitem id="menu_whatsapp_campaigns"
               name="Campanhas"
               parent="marketing_whatsapp_root"
               sequence="10"/>
+
 
     <menuitem id="menu_whatsapp_mailing_all"
               name="Campanhas de WhatsApp"

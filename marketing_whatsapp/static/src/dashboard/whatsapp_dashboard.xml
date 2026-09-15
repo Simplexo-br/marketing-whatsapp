@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="marketing_whatsapp.WhatsappDashboard">
+        <div class="o_whatsapp_dashboard container-fluid py-3 px-4">
+            <!-- Header & Period Filter -->
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="p-2 rounded-3 text-white shadow-sm" style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);">
+                        <i class="fa fa-whatsapp fa-2x"/>
+                    </div>
+                    <div>
+                        <h3 class="mb-0 fw-bold text-dark">Painel Executivo Marketing WhatsApp</h3>
+                        <p class="text-muted mb-0 small">Métricas de campanhas em massa, taxas de engajamento e status Meta Cloud API</p>
+                    </div>
+                </div>
+
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <!-- Period Selector -->
+                    <div class="btn-group shadow-sm" role="group">
+                        <button type="button" 
+                                class="btn btn-sm" 
+                                t-att-class="state.period === 'today' ? 'btn-success fw-bold' : 'btn-outline-secondary'"
+                                t-on-click="() => this.onPeriodChange('today')">Hoje</button>
+                        <button type="button" 
+                                class="btn btn-sm" 
+                                t-att-class="state.period === 'week' ? 'btn-success fw-bold' : 'btn-outline-secondary'"
+                                t-on-click="() => this.onPeriodChange('week')">7 Dias</button>
+                        <button type="button" 
+                                class="btn btn-sm" 
+                                t-att-class="state.period === 'month' ? 'btn-success fw-bold' : 'btn-outline-secondary'"
+                                t-on-click="() => this.onPeriodChange('month')">30 Dias</button>
+                        <button type="button" 
+                                class="btn btn-sm" 
+                                t-att-class="state.period === 'all' ? 'btn-success fw-bold' : 'btn-outline-secondary'"
+                                t-on-click="() => this.onPeriodChange('all')">Todo o Período</button>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <button class="btn btn-primary btn-sm d-flex align-items-center gap-1 shadow-sm" t-on-click="openNewCampaign">
+                        <i class="fa fa-plus-circle"/> <span>Nova Campanha</span>
+                    </button>
+                    <button class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1" t-on-click="openImportWizard">
+                        <i class="fa fa-upload"/> <span>Importar Lista</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Loading Spinner -->
+            <div t-if="state.loading" class="text-center py-5">
+                <div class="spinner-border text-success" role="status">
+                    <span class="visually-hidden">Carregando métricas...</span>
+                </div>
+                <p class="mt-2 text-muted">Carregando métricas em tempo real...</p>
+            </div>
+
+            <div t-if="!state.loading">
+                <!-- KPI CARDS ROW -->
+                <div class="row g-3 mb-4">
+                    <!-- Total Destinatários -->
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm rounded-3 p-3 kpi-card" t-on-click="() => this.openContacts()" style="cursor: pointer; border-left: 5px solid #25D366 !important;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="text-muted fw-semibold small text-uppercase">Base com Celular</span>
+                                <span class="badge bg-light text-success border"><i class="fa fa-users me-1"/>127 Listas</span>
+                            </div>
+                            <h2 class="fw-bold mb-1 text-dark" t-esc="state.metrics.contacts_with_whatsapp.toLocaleString()"/>
+                            <div class="d-flex align-items-center text-muted small">
+                                <span>Total na Base: <b t-esc="state.metrics.total_contacts.toLocaleString()"/></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mensagens Enviadas / Entregues -->
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm rounded-3 p-3 kpi-card" t-on-click="() => this.openContacts('sent')" style="cursor: pointer; border-left: 5px solid #3b82f6 !important;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="text-muted fw-semibold small text-uppercase">Taxa de Entrega</span>
+                                <span class="badge bg-primary-subtle text-primary fw-bold" t-esc="state.metrics.delivery_rate + '%'"/>
+                            </div>
+                            <h2 class="fw-bold mb-1 text-primary" t-esc="state.metrics.contacts_delivered.toLocaleString()"/>
+                            <div class="d-flex align-items-center text-muted small">
+                                <span>Enviados: <b t-esc="state.metrics.contacts_sent.toLocaleString()"/></span>
+                                <span class="mx-1">•</span>
+                                <span class="text-danger" t-if="state.metrics.failed_traces > 0">Falhas: <t t-esc="state.metrics.failed_traces"/></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visualizações / Abertura -->
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm rounded-3 p-3 kpi-card" t-on-click="() => this.openContacts('read')" style="cursor: pointer; border-left: 5px solid #f59e0b !important;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="text-muted fw-semibold small text-uppercase">Taxa de Leitura</span>
+                                <span class="badge bg-warning-subtle text-warning-emphasis fw-bold" t-esc="state.metrics.read_rate + '%'"/>
+                            </div>
+                            <h2 class="fw-bold mb-1 text-warning-emphasis" t-esc="state.metrics.contacts_read.toLocaleString()"/>
+                            <div class="d-flex align-items-center text-muted small">
+                                <span>Mensagens visualizadas</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Respostas & Engajamento -->
+                    <div class="col-12 col-sm-6 col-xl-3">
+                        <div class="card h-100 border-0 shadow-sm rounded-3 p-3 kpi-card" t-on-click="() => this.openContacts('replied')" style="cursor: pointer; border-left: 5px solid #10b981 !important;">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="text-muted fw-semibold small text-uppercase">Taxa de Conversão</span>
+                                <span class="badge bg-success-subtle text-success fw-bold" t-esc="state.metrics.reply_rate + '%'"/>
+                            </div>
+                            <h2 class="fw-bold mb-1 text-success" t-esc="state.metrics.contacts_replied.toLocaleString()"/>
+                            <div class="d-flex align-items-center text-muted small">
+                                <span>Leads que responderam</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- OPERATION HEALTH & QUOTA BANNER -->
+                <div class="row g-3 mb-4">
+                    <!-- Meta API & Anti-Ban Status -->
+                    <div class="col-12 col-lg-7">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100" style="background: linear-gradient(135deg, #f8fafc 0%, #edf2f7 100%);">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-success p-2 rounded-circle"><i class="fa fa-shield text-white"/></span>
+                                    <h6 class="fw-bold mb-0 text-dark">Canal Oficial &amp; Proteção Anti-Ban Meta</h6>
+                                </div>
+                                <span class="badge bg-success text-white px-2 py-1"><i class="fa fa-circle text-white me-1 small"/>Conectado</span>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded-2 shadow-xs border">
+                                        <div class="text-muted small">Qualidade Meta</div>
+                                        <div class="fw-bold text-success"><i class="fa fa-star me-1"/>ALTA (Verde)</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded-2 shadow-xs border">
+                                        <div class="text-muted small">Limite Diário</div>
+                                        <div class="fw-bold text-dark">1.000 msgs/dia</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded-2 shadow-xs border">
+                                        <div class="text-muted small">Cadência Pacing</div>
+                                        <div class="fw-bold text-primary">125 / hora (~28s)</div>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-md-3">
+                                    <div class="p-2 bg-white rounded-2 shadow-xs border">
+                                        <div class="text-muted small">Canal Conectado</div>
+                                        <div class="fw-bold text-truncate text-dark" t-esc="state.account.phone_number"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quota & Assinatura -->
+                    <div class="col-12 col-lg-5">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="fa fa-credit-card text-primary"/>
+                                    <h6 class="fw-bold mb-0 text-dark" t-esc="state.subscription.plan_name"/>
+                                </div>
+                                <button class="btn btn-link btn-sm p-0 text-decoration-none" t-on-click="openSubscriptions">Ver Assinatura</button>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-end mb-1">
+                                <span class="small text-muted">Consumo Mensal: <b t-esc="state.subscription.messages_sent.toLocaleString()"/> de <t t-esc="state.subscription.messages_limit.toLocaleString()"/></span>
+                                <span class="fw-bold text-primary" t-esc="state.subscription.usage_percentage + '%'"/>
+                            </div>
+                            <div class="progress mb-2" style="height: 8px;">
+                                <div class="progress-bar bg-primary" role="progressbar" t-att-style="'width: ' + state.subscription.usage_percentage + '%;'"/>
+                            </div>
+                            <div class="d-flex justify-content-between text-muted small">
+                                <span>Restantes: <b class="text-success" t-esc="state.subscription.messages_remaining.toLocaleString()"/></span>
+                                <span>Renovação Automática: <b>Ativa</b></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS & FUNNEL ROW -->
+                <div class="row g-3 mb-4">
+                    <!-- Funil de Conversão -->
+                    <div class="col-12 col-lg-5">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <h6 class="fw-bold text-dark mb-3"><i class="fa fa-filter text-success me-2"/>Funil de Conversão WhatsApp</h6>
+                            
+                            <!-- Funnel Step 1: Base com Celular -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold text-muted">1. Destinatários Selecionados</span>
+                                    <span class="small fw-bold text-dark"><t t-esc="state.metrics.contacts_with_whatsapp.toLocaleString()"/> (100%)</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-secondary" style="width: 100%"/>
+                                </div>
+                            </div>
+
+                            <!-- Funnel Step 2: Entregues -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold text-muted">2. Mensagens Entregues</span>
+                                    <span class="small fw-bold text-primary"><t t-esc="state.metrics.contacts_delivered.toLocaleString()"/> (<t t-esc="state.metrics.delivery_rate"/>%)</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-primary" t-att-style="'width: ' + state.metrics.delivery_rate + '%;'"/>
+                                </div>
+                            </div>
+
+                            <!-- Funnel Step 3: Visualizados -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold text-muted">3. Mensagens Visualizadas (Lidas)</span>
+                                    <span class="small fw-bold text-warning-emphasis"><t t-esc="state.metrics.contacts_read.toLocaleString()"/> (<t t-esc="state.metrics.read_rate"/>%)</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-warning" t-att-style="'width: ' + state.metrics.read_rate + '%;'"/>
+                                </div>
+                            </div>
+
+                            <!-- Funnel Step 4: Respondidos -->
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-1">
+                                    <span class="small fw-semibold text-muted">4. Leads que Responderam</span>
+                                    <span class="small fw-bold text-success"><t t-esc="state.metrics.contacts_replied.toLocaleString()"/> (<t t-esc="state.metrics.reply_rate"/>%)</span>
+                                </div>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-success" t-att-style="'width: ' + Math.max(state.metrics.reply_rate, 5) + '%;'"/>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráfico de Linha de Disparos -->
+                    <div class="col-12 col-lg-7">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa fa-line-chart text-primary me-2"/>Evolução Temporal dos Disparos</h6>
+                                <span class="badge bg-light text-muted border">Últimos 7 dias</span>
+                            </div>
+                            <div style="position: relative; height: 230px;">
+                                <canvas t-ref="chartCanvas"/>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BOTTOM TABLES ROW -->
+                <div class="row g-3">
+                    <!-- Campanhas Recentes -->
+                    <div class="col-12 col-lg-7">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa fa-bullhorn text-primary me-2"/>Campanhas Recentes</h6>
+                                <button class="btn btn-outline-primary btn-sm" t-on-click="openNewCampaign">Nova Campanha</button>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light small">
+                                        <tr>
+                                            <th>Campanha</th>
+                                            <th>Status</th>
+                                            <th class="text-center">Total</th>
+                                            <th class="text-center">Entregues</th>
+                                            <th class="text-center">Lidos</th>
+                                            <th class="text-end">Ação</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="small">
+                                        <t t-if="state.campaigns.length === 0">
+                                            <tr>
+                                                <td colspan="6" class="text-center py-3 text-muted">Nenhuma campanha criada ainda.</td>
+                                            </tr>
+                                        </t>
+                                        <t t-foreach="state.campaigns" t-as="cmp" t-key="cmp.id">
+                                            <tr>
+                                                <td class="fw-bold text-truncate" style="max-width: 220px;" t-esc="cmp.name"/>
+                                                <td>
+                                                    <span t-if="cmp.state === 'draft'" class="badge bg-secondary">Rascunho</span>
+                                                    <span t-if="cmp.state === 'in_queue'" class="badge bg-info">Na Fila</span>
+                                                    <span t-if="cmp.state === 'sending'" class="badge bg-warning text-dark">Enviando</span>
+                                                    <span t-if="cmp.state === 'done'" class="badge bg-success">Concluído</span>
+                                                </td>
+                                                <td class="text-center" t-esc="cmp.total"/>
+                                                <td class="text-center text-primary fw-bold" t-esc="cmp.delivered"/>
+                                                <td class="text-center text-warning-emphasis fw-bold" t-esc="cmp.read"/>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm btn-light border" t-on-click="() => this.openCampaign(cmp.id)">
+                                                        <i class="fa fa-eye text-muted"/>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hot Leads / Últimas Respostas -->
+                    <div class="col-12 col-lg-5">
+                        <div class="card border-0 shadow-sm rounded-3 p-3 h-100 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold text-dark mb-0"><i class="fa fa-comments text-success me-2"/>Leads Engajados (Respostas)</h6>
+                                <button class="btn btn-link btn-sm p-0 text-decoration-none" t-on-click="() => this.openContacts('replied')">Ver Todos</button>
+                            </div>
+                            
+                            <t t-if="state.recent_replies.length === 0">
+                                <div class="text-center py-4 text-muted small">
+                                    <i class="fa fa-inbox fa-2x mb-2 text-muted"/>
+                                    <p class="mb-0">Aguardando as primeiras respostas dos leads...</p>
+                                </div>
+                            </t>
+
+                            <div class="d-flex flex-column gap-2">
+                                <t t-foreach="state.recent_replies" t-as="lead" t-key="lead.id">
+                                    <div class="p-2 rounded-2 border bg-light d-flex justify-content-between align-items-center lead-card" 
+                                         t-on-click="() => this.openContactForm(lead.id)" 
+                                         style="cursor: pointer; transition: all 0.2s;">
+                                        <div class="overflow-hidden me-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="fw-bold text-dark small" t-esc="lead.name"/>
+                                                <span t-if="lead.company" class="badge bg-white text-muted border small" t-esc="lead.company"/>
+                                            </div>
+                                            <div class="text-muted small text-truncate" t-esc="lead.last_response"/>
+                                        </div>
+                                        <div class="text-end text-nowrap">
+                                            <a t-att-href="'https://wa.me/' + lead.mobile.replace('+', '')" target="_blank" class="btn btn-sm btn-success p-1 px-2 text-white" title="Abrir no WhatsApp Web" t-on-click.stop="">
+                                                <i class="fa fa-whatsapp"/>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </t>
+</templates>
