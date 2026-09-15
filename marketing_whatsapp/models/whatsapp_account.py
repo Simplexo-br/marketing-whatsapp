@@ -298,5 +298,21 @@ class WhatsAppAccount(models.Model):
         if 'simplexo.aios.whatsapp.channel' in self.env:
             action = self.env.ref('simplexo_aios_whatsapp.action_aios_whatsapp_channels', raise_if_not_found=False)
             if action:
-                return action.read()[0]
-        return self.env.ref('marketing_whatsapp.action_whatsapp_account').read()[0]
+                return {
+                    'type': 'ir.actions.act_window',
+                    'name': action.name or _('Canais & WhatsApp Seguro'),
+                    'res_model': 'simplexo.aios.whatsapp.channel',
+                    'view_mode': 'kanban,list,form',
+                    'views': [(False, 'kanban'), (False, 'list'), (False, 'form')],
+                    'target': 'current',
+                    'context': action.context or {},
+                }
+        return {
+            'type': 'ir.actions.act_window',
+            'name': _('Contas de WhatsApp (Meta)'),
+            'res_model': 'whatsapp.account',
+            'view_mode': 'list,form',
+            'views': [(False, 'list'), (False, 'form')],
+            'target': 'current',
+        }
+
