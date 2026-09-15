@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import logging
+import re
 import phonenumbers
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
@@ -77,24 +78,62 @@ class MailingContact(models.Model):
                     break
         return super().write(vals)
 
+    VALID_BRAZILIAN_DDDS = {
+        11, 12, 13, 14, 15, 16, 17, 18, 19,
+        21, 22, 24, 27, 28,
+        31, 32, 33, 34, 35, 37, 38,
+        41, 42, 43, 44, 45, 46, 47, 48, 49,
+        51, 53, 54, 55,
+        61, 62, 63, 64, 65, 66, 67, 68, 69,
+        71, 73, 74, 75, 77, 79,
+        81, 82, 83, 84, 85, 86, 87, 88, 89,
+        91, 92, 93, 94, 95, 96, 97, 98, 99
+    }
+
     @api.model
     def _sanitize_whatsapp_number(self, phone_str, default_country='BR'):
         if not phone_str:
             return False
-        cleaned = ''.join(c for c in phone_str if c.isdigit() or c == '+')
-        try:
-            parsed = phonenumbers.parse(cleaned, default_country)
-            if phonenumbers.is_possible_number(parsed):
-                return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
-        except phonenumbers.NumberParseException:
-            pass
-        
-        # Fallback simples se o parser falhar mas começar com dígitos
-        digits = ''.join(c for c in phone_str if c.isdigit())
-        if digits:
-            if not digits.startswith('55') and len(digits) in [10, 11] and default_country == 'BR':
+            
+        digits = re.sub(r'[^0-9]', '', str(phone_str))
+        if not digits:
+            return False
+
+        # Se for número brasileiro padrão já formatado com 55 (12 ou 13 dígitos)
+        if digits.startswith('55') and len(digits) in [12, 13]:
+            ddd = int(digits[2:4])
+            if ddd in self.VALID_BRAZILIAN_DDDS:
+                return f"+{digits}"
+
+        # Se for número local sem 55 (10 ou 11 dígitos)
+        if len(digits) in [10, 11] and default_country == 'BR':
+            ddd = int(digits[:2])
+            if ddd in self.VALID_BRAZILIAN_DDDS:
                 return f"+55{digits}"
-            return f"+{digits}"
+
+        # Se tiver mais de 11 dígitos (números múltiplos ou concatenados em importações)
+        if default_country == 'BR' or digits.startswith('55'):
+            # 1. Procurar primeiro celular brasileiro válido: DDD (11-99) + 9 + 8 dígitos
+            for m in re.finditer(r'(?:55)?([1-9][0-9]9[0-9]{8})', digits):
+                candidate = m.group(1)
+                ddd = int(candidate[:2])
+                if ddd in self.VALID_BRAZILIAN_DDDS:
+                    return f"+55{candidate}"
+            # 2. Procurar primeiro telefone fixo brasileiro válido: DDD (11-99) + [2-5] + 7 dígitos
+            for m in re.finditer(r'(?:55)?([1-9][0-9][2-5][0-9]{7})', digits):
+                candidate = m.group(1)
+                ddd = int(candidate[:2])
+                if ddd in self.VALID_BRAZILIAN_DDDS:
+                    return f"+55{candidate}"
+
+        # Fallback via phonenumbers para números internacionais
+        try:
+            parsed = phonenumbers.parse('+' + digits if not phone_str.startswith('+') else phone_str, default_country)
+            if phonenumbers.is_possible_number(parsed) and len(str(parsed.national_number)) <= 12:
+                return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164)
+        except Exception:
+            pass
+
         return False
 
     @api.model
