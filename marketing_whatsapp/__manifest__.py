@@ -52,11 +52,13 @@ Principais Recursos:
         'views/mailing_mailing_views.xml',
         'views/mailing_contact_views.xml',
         'views/res_config_settings_views.xml',
-        'views/menus.xml',
 
         # Wizards
         'wizard/import_whatsapp_contacts_views.xml',
         'wizard/mailing_whatsapp_test_views.xml',
+
+        # Menus (carregados por último para ter todas as ações disponíveis)
+        'views/menus.xml',
     ],
     'demo': [],
     'images': ['static/description/icon.png'],
