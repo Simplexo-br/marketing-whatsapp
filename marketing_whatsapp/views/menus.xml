@@ -67,7 +67,7 @@
     <menuitem id="menu_whatsapp_channels_list"
               name="Canais &amp; WhatsApp Seguro"
               parent="menu_whatsapp_channels_root"
-              action="simplexo_aios_whatsapp.action_aios_whatsapp_channels"
+              action="action_open_channels_smart"
               sequence="1"/>
 
     <menuitem id="menu_whatsapp_accounts_meta"
@@ -123,7 +123,7 @@
     <menuitem id="menu_whatsapp_channels_config"
               name="Canais &amp; WhatsApp Seguro (Novos Números)"
               parent="menu_whatsapp_configuration"
-              action="simplexo_aios_whatsapp.action_aios_whatsapp_channels"
+              action="action_open_channels_smart"
               sequence="1"/>
 
     <menuitem id="menu_whatsapp_accounts"

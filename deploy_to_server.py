@@ -4,7 +4,7 @@ import os
 import json
 import base64
 
-local_module_dir = r"c:\Users\user\Documents\antigravity\Marketing Whatsapp\marketing_whatsapp"
+local_module_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "marketing_whatsapp")
 module_name = "marketing_whatsapp"
 
 print(f"==> Coletando arquivos de {local_module_dir}...")
@@ -59,7 +59,13 @@ stat = subprocess.run("sudo systemctl status odoo-simplexo --no-pager", shell=Tr
 print(stat.stdout[:600])
 """
 
-ssh_key = r"C:\Users\user\Documents\Codex\2026-09-05\files-pasted-by-the-user-usr\work\ssh\simplexo_vm"
+default_keys = [
+    os.environ.get("SIMPLEXO_SSH_KEY"),
+    os.path.expanduser("~/.ssh/simplexo_vm"),
+    os.path.expanduser("~/.ssh/simplexo_gpt_desktop"),
+    r"C:\Users\user\Documents\Codex\2026-09-05\files-pasted-by-the-user-usr\work\ssh\simplexo_vm",
+]
+ssh_key = next((k for k in default_keys if k and os.path.exists(k)), default_keys[-1])
 bastion = "fellipe_ramalho@35.224.220.67"
 internal_server = "fellipe_ramalho@34.45.88.55"
 

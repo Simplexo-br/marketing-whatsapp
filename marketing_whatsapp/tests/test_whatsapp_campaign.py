@@ -95,3 +95,91 @@ class TestWhatsAppCampaign(TransactionCase):
         self.assertEqual(invoice.move_type, 'out_invoice')
         self.assertEqual(invoice.partner_id.id, self.partner.id)
         self.assertEqual(invoice.amount_total, 149.0)
+
+    def test_carousel_template_and_payload(self):
+        """Testa a criação de template de carrossel e a montagem do payload oficial da Meta Cloud API v20+"""
+        CardModel = self.env['whatsapp.template.card']
+        ButtonModel = self.env['whatsapp.template.button']
+
+        carousel_template = self.WhatsAppTemplateModel.create({
+            'name': 'carrossel_produtos_demo',
+            'account_id': self.account.id,
+            'template_type': 'carousel',
+            'language': 'pt_BR',
+            'category': 'MARKETING',
+            'status': 'APPROVED',
+            'body_text': 'Confira nossos destaques da semana:',
+        })
+
+        card1 = CardModel.create({
+            'template_id': carousel_template.id,
+            'sequence': 10,
+            'name': 'Produto 1 - CRM Inteligente',
+            'header_type': 'image',
+            'header_media_url': 'https://simplexo.com.br/img/crm.png',
+            'body_text': 'Aumente suas vendas com CRM integrado.',
+        })
+
+        ButtonModel.create({
+            'card_id': card1.id,
+            'name': 'Ver Oferta',
+            'button_type': 'URL',
+            'url_type': 'dynamic',
+            'url': 'https://simplexo.com.br/crm/{{1}}',
+        })
+
+        card2 = CardModel.create({
+            'template_id': carousel_template.id,
+            'sequence': 20,
+            'name': 'Produto 2 - ERP Simplexo',
+            'header_type': 'image',
+            'header_media_url': 'https://simplexo.com.br/img/erp.png',
+            'body_text': 'Gestão completa para sua empresa.',
+        })
+
+        ButtonModel.create({
+            'card_id': card2.id,
+            'name': 'Falar com Consultor',
+            'button_type': 'QUICK_REPLY',
+            'payload': 'INTERESSE_ERP',
+        })
+
+        # Cria campanha para testar geração de payload
+        mailing = self.MailingModel.create({
+            'subject': 'Campanha Carrossel de Produtos',
+            'mailing_type': 'whatsapp',
+            'whatsapp_account_id': self.account.id,
+            'whatsapp_template_id': carousel_template.id,
+        })
+
+        class MockContact:
+            id = 42
+            name = 'Roberto Dias'
+            company_name = 'Dias Tech'
+
+        payload = mailing._build_meta_payload(self.account, carousel_template, '5511987654321', MockContact())
+
+        self.assertEqual(payload['messaging_product'], 'whatsapp')
+        self.assertEqual(payload['type'], 'template')
+        self.assertEqual(payload['template']['name'], 'carrossel_produtos_demo')
+
+        components = payload['template']['components']
+        carousel_comp = next((c for c in components if c.get('type') == 'carousel'), None)
+        self.assertIsNotNone(carousel_comp, "Componente de carrossel deve estar presente no payload")
+
+        cards = carousel_comp.get('cards', [])
+        self.assertEqual(len(cards), 2, "Devem existir 2 cartões no payload de carrossel")
+        self.assertEqual(cards[0]['card_index'], 0)
+        self.assertEqual(cards[1]['card_index'], 1)
+
+        # Checa botão dinâmico no card 1
+        card1_btn = next((c for c in cards[0]['components'] if c.get('type') == 'button'), None)
+        self.assertIsNotNone(card1_btn)
+        self.assertEqual(card1_btn['sub_type'], 'url')
+        self.assertEqual(card1_btn['parameters'][0]['text'], '42')
+
+        # Checa botão quick reply com payload no card 2
+        card2_btn = next((c for c in cards[1]['components'] if c.get('type') == 'button'), None)
+        self.assertIsNotNone(card2_btn)
+        self.assertEqual(card2_btn['sub_type'], 'quick_reply')
+        self.assertEqual(card2_btn['parameters'][0]['payload'], 'INTERESSE_ERP')

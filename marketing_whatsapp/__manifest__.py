@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Marketing WhatsApp',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.1.0',
     'category': 'Marketing/WhatsApp',
-    'summary': 'Disparos em massa de campanhas de WhatsApp via Meta Cloud API Oficial com planos de assinatura, faturamento automático e proteção Anti-Ban',
+    'summary': 'Disparos em massa de campanhas de WhatsApp via Meta Cloud API Oficial com Templates em Carrossel, planos de assinatura, faturamento automático e proteção Anti-Ban',
     'description': """
 Marketing WhatsApp para Odoo 18 (Comercialização Simplexo)
 ==========================================================
@@ -11,13 +11,14 @@ Módulo completo e profissional para criação e disparo em massa de campanhas d
 
 Principais Recursos:
 -------------------
-* Interface idêntica ao Marketing por E-mail e Marketing por SMS.
+* Interface perfeitamente integrada ao Marketing de Massa Odoo 18.
+* Suporte a Templates em Carrossel (Fase 2 Roadmap): até 10 cartões navegáveis com imagens e botões de ação independentes.
 * Modelo Comercial SaaS: 3 Planos de Assinatura (Starter, Pro, Enterprise) com limites de mensagens e cobrança automática.
 * Integração com Faturamento Odoo: Emissão automática de faturas de clientes e gestão de ciclo de renovação.
 * Conexão direta com a Meta Cloud API (App AIOS) - sem custos adicionais de intermediários.
 * Importador de planilhas Excel/CSV (Nome, Empresa, Telefone) com higienização internacional E.164.
 * Segmentação flexível: Disparo para CRM (Leads/Oportunidades), Contatos/Parceiros ou Listas de Disparo.
-* Suporte completo a Mídia Rica: Imagens, PDFs, Vídeos e Botões Interativos (Quick Reply, URL, Opt-Out).
+* Suporte completo a Mídia Rica: Imagens, PDFs, Vídeos, Botões Dinâmicos e de Resposta Rápida com Payloads.
 * Motor Anti-Ban & Pacing: Controle de vazão (taxa de mensagens por minuto/hora), respeito aos limites diários de Tiers (1k, 10k, 100k) e monitoramento de Quality Rating.
 * Webhook em tempo real: Recepção de status (Enviado, Entregue, Lido, Falha) e auto-cadastro de Opt-Out na Blacklist.
     """,

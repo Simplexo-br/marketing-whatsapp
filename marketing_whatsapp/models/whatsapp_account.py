@@ -156,6 +156,7 @@ class WhatsAppAccount(models.Model):
             templates_data = data.get('data', [])
             TemplateModel = self.env['whatsapp.template']
             ButtonModel = self.env['whatsapp.template.button']
+            CardModel = self.env['whatsapp.template.card']
             synced_count = 0
 
             for tmpl in templates_data:
@@ -165,11 +166,13 @@ class WhatsAppAccount(models.Model):
                 category = tmpl.get('category', 'MARKETING').upper()
                 meta_template_id = tmpl.get('id')
 
+                template_type = 'standard'
                 header_type = 'none'
                 header_text = False
                 body_text = False
                 footer_text = False
                 buttons_list = []
+                cards_list = []
 
                 for comp in tmpl.get('components', []):
                     comp_type = comp.get('type')
@@ -189,6 +192,33 @@ class WhatsAppAccount(models.Model):
                                 'url': btn.get('url', ''),
                                 'phone_number': btn.get('phone_number', '')
                             })
+                    elif comp_type == 'CAROUSEL':
+                        template_type = 'carousel'
+                        for card_idx, card_obj in enumerate(comp.get('cards', []), 1):
+                            c_header_type = 'image'
+                            c_body = ''
+                            c_buttons = []
+                            for c_comp in card_obj.get('components', []):
+                                c_type = c_comp.get('type')
+                                if c_type == 'HEADER':
+                                    c_header_type = c_comp.get('format', 'IMAGE').lower()
+                                elif c_type == 'BODY':
+                                    c_body = c_comp.get('text', '')
+                                elif c_type == 'BUTTONS':
+                                    for c_btn in c_comp.get('buttons', []):
+                                        c_buttons.append({
+                                            'button_type': c_btn.get('type', 'QUICK_REPLY'),
+                                            'name': c_btn.get('text', ''),
+                                            'url': c_btn.get('url', ''),
+                                            'phone_number': c_btn.get('phone_number', '')
+                                        })
+                            cards_list.append({
+                                'name': f"Cartão #{card_idx}",
+                                'sequence': card_idx * 10,
+                                'header_type': c_header_type if c_header_type in ['image', 'video'] else 'image',
+                                'body_text': c_body,
+                                'buttons': c_buttons
+                            })
 
                 existing = TemplateModel.search([
                     ('account_id', '=', self.id),
@@ -203,6 +233,7 @@ class WhatsAppAccount(models.Model):
                     'language': language,
                     'category': category if category in ['MARKETING', 'UTILITY', 'AUTHENTICATION'] else 'MARKETING',
                     'status': status if status in ['APPROVED', 'PENDING', 'REJECTED', 'PAUSED'] else 'PENDING',
+                    'template_type': template_type,
                     'header_type': header_type if header_type in ['none', 'text', 'image', 'document', 'video'] else 'none',
                     'header_text': header_text,
                     'body_text': body_text or '',
@@ -215,10 +246,22 @@ class WhatsAppAccount(models.Model):
                 else:
                     record_tmpl = TemplateModel.create(vals)
 
+                # Atualiza botões do template principal
                 record_tmpl.button_ids.unlink()
                 for btn_data in buttons_list:
                     btn_data['template_id'] = record_tmpl.id
                     ButtonModel.create(btn_data)
+
+                # Atualiza cartões do carrossel se aplicável
+                if template_type == 'carousel':
+                    record_tmpl.card_ids.unlink()
+                    for c_info in cards_list:
+                        c_buttons = c_info.pop('buttons', [])
+                        c_info['template_id'] = record_tmpl.id
+                        new_card = CardModel.create(c_info)
+                        for b_data in c_buttons:
+                            b_data['card_id'] = new_card.id
+                            ButtonModel.create(b_data)
 
                 synced_count += 1
 
@@ -235,3 +278,12 @@ class WhatsAppAccount(models.Model):
 
         except requests.exceptions.RequestException as e:
             raise UserError(_("Falha ao sincronizar templates: %s") % str(e))
+
+    @api.model
+    def action_open_channels_management(self):
+        """Abre a gestão de canais do AIOS se instalado, ou as contas de WhatsApp nativas."""
+        if 'simplexo.aios.whatsapp.channel' in self.env:
+            action = self.env.ref('simplexo_aios_whatsapp.action_aios_whatsapp_channels', raise_if_not_found=False)
+            if action:
+                return action.read()[0]
+        return self.env.ref('marketing_whatsapp.action_whatsapp_account').read()[0]

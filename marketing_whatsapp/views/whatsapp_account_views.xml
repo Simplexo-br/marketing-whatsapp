@@ -98,4 +98,14 @@
             </p>
         </field>
     </record>
+
+    <!-- Ação de Canais & Números (Suporta AIOS se presente, ou abre Contas Meta) -->
+    <record id="action_open_channels_smart" model="ir.actions.server">
+        <field name="name">Canais &amp; WhatsApp Seguro</field>
+        <field name="model_id" ref="model_whatsapp_account"/>
+        <field name="state">code</field>
+        <field name="code">
+action = model.action_open_channels_management()
+        </field>
+    </record>
 </odoo>

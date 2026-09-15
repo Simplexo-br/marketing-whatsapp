@@ -19,33 +19,76 @@
 
                     <group>
                         <group string="Identificação &amp; Idioma">
+                            <field name="template_type" widget="radio"/>
                             <field name="account_id"/>
                             <field name="language"/>
                             <field name="category"/>
                             <field name="meta_template_id"/>
                         </group>
-                        <group string="Cabeçalho">
+                        <group string="Cabeçalho" invisible="template_type == 'carousel'">
                             <field name="header_type"/>
                             <field name="header_text" invisible="header_type != 'text'"/>
                             <field name="body_variables_count"/>
                         </group>
                     </group>
 
-                    <group string="Conteúdo da Mensagem">
+                    <group string="Mensagem Principal / Introdução">
                         <group colspan="2">
-                            <field name="body_text" placeholder="Ex: Olá {{1}}, temos uma condição especial para a empresa {{2}}! Confira no link abaixo."/>
-                            <field name="footer_text" placeholder="Ex: Responda STOP para cancelar."/>
+                            <field name="body_text" placeholder="Ex: Olá {{1}}, confira nossas ofertas exclusivas desta semana!"/>
+                            <field name="footer_text" placeholder="Ex: Responda STOP para cancelar." invisible="template_type == 'carousel'"/>
                         </group>
                     </group>
 
                     <notebook>
-                        <page string="Botões Interativos" name="buttons">
+                        <page string="Cartões do Carrossel" name="cards" invisible="template_type != 'carousel'">
+                            <field name="card_ids">
+                                <list>
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="name"/>
+                                    <field name="header_type"/>
+                                    <field name="header_media_url"/>
+                                    <field name="body_text"/>
+                                </list>
+                                <form string="Cartão de Carrossel">
+                                    <sheet>
+                                        <group>
+                                            <group string="Identificação &amp; Mídia">
+                                                <field name="name"/>
+                                                <field name="sequence"/>
+                                                <field name="header_type"/>
+                                                <field name="header_media_url"/>
+                                                <field name="header_attachment_id"/>
+                                            </group>
+                                            <group string="Conteúdo">
+                                                <field name="body_text"/>
+                                            </group>
+                                        </group>
+                                        <group string="Botões de Ação do Cartão">
+                                            <field name="button_ids">
+                                                <list editable="bottom">
+                                                    <field name="sequence" widget="handle"/>
+                                                    <field name="name"/>
+                                                    <field name="button_type"/>
+                                                    <field name="url_type" invisible="button_type != 'URL'"/>
+                                                    <field name="url" invisible="button_type != 'URL'"/>
+                                                    <field name="payload" invisible="button_type != 'QUICK_REPLY'"/>
+                                                    <field name="phone_number" invisible="button_type != 'PHONE_NUMBER'"/>
+                                                </list>
+                                            </field>
+                                        </group>
+                                    </sheet>
+                                </form>
+                            </field>
+                        </page>
+                        <page string="Botões Interativos" name="buttons" invisible="template_type == 'carousel'">
                             <field name="button_ids">
                                 <list editable="bottom">
                                     <field name="sequence" widget="handle"/>
                                     <field name="name"/>
                                     <field name="button_type"/>
+                                    <field name="url_type" invisible="button_type != 'URL'"/>
                                     <field name="url" invisible="button_type != 'URL'"/>
+                                    <field name="payload" invisible="button_type != 'QUICK_REPLY'"/>
                                     <field name="phone_number" invisible="button_type != 'PHONE_NUMBER'"/>
                                 </list>
                             </field>
@@ -69,10 +112,10 @@
         <field name="arch" type="xml">
             <list string="Templates de WhatsApp">
                 <field name="name"/>
+                <field name="template_type" widget="badge"/>
                 <field name="account_id"/>
                 <field name="language"/>
                 <field name="category"/>
-                <field name="header_type"/>
                 <field name="status" widget="badge" decoration-success="status == 'APPROVED'" decoration-warning="status == 'PENDING'" decoration-danger="status == 'REJECTED'"/>
             </list>
         </field>

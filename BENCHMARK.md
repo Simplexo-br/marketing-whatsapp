@@ -30,7 +30,7 @@ Este documento apresenta uma análise comparativa e de mercado detalhada entre a
 | **Segmentação Nativa com CRM / Leads** | ❌ | ❌ | ❌ | ✅ | ✅ **Filtro dinâmico Odoo CRM/Leads/Partners** |
 | **Disparo de Imagens, Vídeos e Docs** | ✅ | ✅ | ✅ | ✅ | ✅ **Templates com Rich Media & Preview** |
 | **Botões Interativos (Quick Reply / URL / STOP)** | ✅ | ✅ | ✅ | ✅ | ✅ **Botões Nativos Meta** |
-| **Templates Carrossel (Múltiplos Cards)** | ✅ | ✅ | ⚠️ | ❌ | 🔄 **Roadmap Fase 2** |
+| **Templates Carrossel (Múltiplos Cards)** | ✅ | ✅ | ⚠️ | ❌ | ✅ **Suporte Nativo (Meta Cloud API v20+)** |
 | **WhatsApp Flows (Formulários Nativos no Chat)** | ✅ | ❌ | ❌ | ❌ | 🔄 **Roadmap Fase 3** |
 | **Pacing & Throttle Inteligente (Anti-Ban)** | ✅ | ✅ | ✅ | ⚠️ Básico | ✅ **Motor Cron com Rate Limiter (MPS)** |
 | **Gestão de Opt-Out / Blacklist Automática** | ✅ | ✅ | ✅ | ⚠️ | ✅ **Integração com `phone.blacklist`** |

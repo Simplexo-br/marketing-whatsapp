@@ -305,37 +305,121 @@ class MailingMailing(models.Model):
 
     def _build_meta_payload(self, account, template, clean_phone, target_record=False):
         components = []
+        base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url', '')
 
-        if template.header_type in ['image', 'document', 'video']:
-            media_param = {}
-            if self.whatsapp_media_url:
-                media_param = {"link": self.whatsapp_media_url}
-            elif self.whatsapp_media_attachment_id:
-                base_url = self.env['ir.config_parameter'].sudo().get_param('web.base.url')
-                media_url = f"{base_url}/web/content/{self.whatsapp_media_attachment_id.id}"
-                media_param = {"link": media_url}
+        if template.template_type == 'carousel' and template.card_ids:
+            # 1. Estrutura de Carrossel Meta Cloud API v20+
+            cards_payload = []
+            for c_idx, card in enumerate(template.card_ids):
+                card_components = []
+                # Mídia do Cartão (Header)
+                card_media_url = card.header_media_url
+                if not card_media_url and card.header_attachment_id:
+                    card_media_url = f"{base_url}/web/content/{card.header_attachment_id.id}"
 
-            if media_param:
-                components.append({
-                    "type": "header",
-                    "parameters": [{
-                        "type": template.header_type,
-                        template.header_type: media_param
-                    }]
+                if card_media_url:
+                    card_components.append({
+                        "type": "header",
+                        "parameters": [{
+                            "type": card.header_type,
+                            card.header_type: {"link": card_media_url}
+                        }]
+                    })
+
+                # Botões do Cartão
+                for b_idx, btn in enumerate(card.button_ids):
+                    if btn.button_type == 'URL' and btn.url_type == 'dynamic':
+                        # Interpolação de URL dinâmica com ID do destinatário ou UTM
+                        contact_id = getattr(target_record, 'id', '1')
+                        card_components.append({
+                            "type": "button",
+                            "sub_type": "url",
+                            "index": b_idx,
+                            "parameters": [{
+                                "type": "text",
+                                "text": str(contact_id)
+                            }]
+                        })
+                    elif btn.button_type == 'QUICK_REPLY' and btn.payload:
+                        card_components.append({
+                            "type": "button",
+                            "sub_type": "quick_reply",
+                            "index": b_idx,
+                            "parameters": [{
+                                "type": "payload",
+                                "payload": btn.payload
+                            }]
+                        })
+
+                cards_payload.append({
+                    "card_index": c_idx,
+                    "components": card_components
                 })
 
-        if template.body_variables_count > 0:
-            body_params = []
-            for i in range(1, template.body_variables_count + 1):
-                val = self._extract_variable_value(i, target_record)
-                body_params.append({
-                    "type": "text",
-                    "text": str(val or '')
-                })
             components.append({
-                "type": "body",
-                "parameters": body_params
+                "type": "carousel",
+                "cards": cards_payload
             })
+
+            # Se houver corpo de texto na mensagem que acompanha o carrossel
+            if template.body_variables_count > 0:
+                body_params = []
+                for i in range(1, template.body_variables_count + 1):
+                    val = self._extract_variable_value(i, target_record)
+                    body_params.append({
+                        "type": "text",
+                        "text": str(val or '')
+                    })
+                components.insert(0, {
+                    "type": "body",
+                    "parameters": body_params
+                })
+
+        else:
+            # 2. Estrutura de Mensagem Padrão (Texto / Mídia)
+            if template.header_type in ['image', 'document', 'video']:
+                media_param = {}
+                if self.whatsapp_media_url:
+                    media_param = {"link": self.whatsapp_media_url}
+                elif self.whatsapp_media_attachment_id:
+                    media_url = f"{base_url}/web/content/{self.whatsapp_media_attachment_id.id}"
+                    media_param = {"link": media_url}
+
+                if media_param:
+                    components.append({
+                        "type": "header",
+                        "parameters": [{
+                            "type": template.header_type,
+                            template.header_type: media_param
+                        }]
+                    })
+
+            if template.body_variables_count > 0:
+                body_params = []
+                for i in range(1, template.body_variables_count + 1):
+                    val = self._extract_variable_value(i, target_record)
+                    body_params.append({
+                        "type": "text",
+                        "text": str(val or '')
+                    })
+                components.append({
+                    "type": "body",
+                    "parameters": body_params
+                })
+
+            # Botões dinâmicos do template principal
+            for b_idx, btn in enumerate(template.button_ids):
+                if btn.button_type == 'URL' and btn.url_type == 'dynamic':
+                    contact_id = getattr(target_record, 'id', '1')
+                    components.append({
+                        "type": "button",
+                        "sub_type": "url",
+                        "index": b_idx,
+                        "parameters": [{
+                            "type": "text",
+                            "text": str(contact_id)
+                        }]
+                    })
 
         payload = {
             "messaging_product": "whatsapp",
