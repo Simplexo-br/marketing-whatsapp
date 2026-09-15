@@ -169,6 +169,21 @@ class MailingMailing(models.Model):
             mailing.write({'state': 'in_queue'})
         return super(MailingMailing, self - whatsapp_mailings).action_put_in_queue()
 
+    def action_retry_failed(self):
+        for mailing in self:
+            failed_traces = self.env['mailing.trace'].search([
+                ('mass_mailing_id', '=', mailing.id),
+                ('whatsapp_status', '=', 'failed')
+            ])
+            if failed_traces:
+                failed_traces.write({
+                    'whatsapp_status': 'outgoing',
+                    'whatsapp_error_code': False,
+                    'whatsapp_error_message': False,
+                })
+                mailing.write({'state': 'sending'})
+                mailing._process_whatsapp_queue(batch_limit=50)
+
     def _create_whatsapp_traces(self):
         self.ensure_one()
         TraceModel = self.env['mailing.trace']
