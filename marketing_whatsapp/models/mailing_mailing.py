@@ -193,6 +193,8 @@ class MailingMailing(models.Model):
     def _get_whatsapp_recipients(self):
         self.ensure_one()
         records = self._get_recipients()
+        if records and isinstance(records[0], int):
+            records = self.env[self.mailing_model_real].browse(records)
         recipients = []
         
         for record in records:
