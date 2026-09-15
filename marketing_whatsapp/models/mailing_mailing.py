@@ -373,3 +373,14 @@ class MailingMailing(models.Model):
         elif field_choice == 'email':
             return getattr(record, 'email', '') or getattr(record, 'email_from', '') or ''
         return ''
+
+    def action_view_whatsapp_traces(self):
+        self.ensure_one()
+        return {
+            'name': _('Rastreamento de Mensagens'),
+            'type': 'ir.actions.act_window',
+            'view_mode': 'list,form',
+            'res_model': 'mailing.trace',
+            'domain': [('mass_mailing_id', '=', self.id)],
+            'context': dict(self._context, default_mass_mailing_id=self.id),
+        }

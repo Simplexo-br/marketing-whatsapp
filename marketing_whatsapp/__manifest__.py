@@ -47,8 +47,8 @@ Principais Recursos:
 
         # Views
         'views/whatsapp_subscription_views.xml',
-        'views/whatsapp_account_views.xml',
         'views/whatsapp_template_views.xml',
+        'views/whatsapp_account_views.xml',
         'views/mailing_mailing_views.xml',
         'views/mailing_contact_views.xml',
         'views/res_config_settings_views.xml',
