@@ -157,11 +157,15 @@ class MailingMailing(models.Model):
 
         existing_traces = TraceModel.search([('mass_mailing_id', '=', self.id)])
         existing_res_ids = set(existing_traces.mapped('res_id'))
+        existing_phones = set(''.join(filter(str.isdigit, p or '')) for p in existing_traces.mapped('whatsapp_recipient_number'))
 
         traces_to_create = []
         for target in recipients:
-            if target['res_id'] in existing_res_ids:
+            target_phone_clean = ''.join(filter(str.isdigit, target.get('phone') or ''))
+            if target['res_id'] in existing_res_ids or (target_phone_clean and target_phone_clean in existing_phones):
                 continue
+            if target_phone_clean:
+                existing_phones.add(target_phone_clean)
 
             traces_to_create.append({
                 'mass_mailing_id': self.id,
@@ -277,11 +281,23 @@ class MailingMailing(models.Model):
                     sent_success_count += 1
                 else:
                     err = res_data.get('error', {})
-                    trace.write({
-                        'whatsapp_status': 'failed',
-                        'whatsapp_error_code': str(err.get('code')),
-                        'whatsapp_error_message': err.get('message', response.text),
-                    })
+                    err_code = err.get('code')
+                    # Meta Cloud API: 131056 = Business conversation limit reached
+                    # 131048 = Business account conversation limit reached
+                    if err_code in [131056, 131048]:
+                        _logger.warning("Limite diário de conversas da Meta atingido para %s (Tier limit). Pausando lote.", account.name)
+                        self.message_post(body=_(
+                            "⚠️ <b>Limite Diário da Meta Atingido (Tier 1 - 1.000 msgs/24h)</b>.<br/>"
+                            "Os disparos foram pausados preventivamente para manter a alta qualidade do número.<br/>"
+                            "A fila será retomada automaticamente na próxima janela ou após a Meta liberar o Tier 2."
+                        ))
+                        break
+                    else:
+                        trace.write({
+                            'whatsapp_status': 'failed',
+                            'whatsapp_error_code': str(err_code),
+                            'whatsapp_error_message': err.get('message', response.text),
+                        })
 
             except requests.exceptions.RequestException as e:
                 trace.write({
