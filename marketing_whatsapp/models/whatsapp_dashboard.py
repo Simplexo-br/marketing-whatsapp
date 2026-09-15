@@ -62,7 +62,8 @@ class WhatsappDashboard(models.AbstractModel):
         base_calc = sent_traces if sent_traces > 0 else (contacts_sent if contacts_sent > 0 else 1)
         delivery_rate = round((delivered_traces / base_calc) * 100, 1) if sent_traces > 0 else (100.0 if contacts_delivered > 0 else 0.0)
         read_rate = round((read_traces / (delivered_traces or 1)) * 100, 1) if delivered_traces > 0 else (round((contacts_read / (contacts_delivered or 1)) * 100, 1) if contacts_delivered > 0 else 0.0)
-        reply_rate = round((contacts_replied / (contacts_delivered or 1)) * 100, 1) if contacts_delivered > 0 else 0.0
+        base_reply = delivered_traces if delivered_traces > 0 else (sent_traces if sent_traces > 0 else (contacts_delivered or 1))
+        reply_rate = round((contacts_replied / (base_reply or 1)) * 100, 1) if base_reply > 0 else 0.0
         fail_rate = round((failed_traces / (total_traces or 1)) * 100, 1) if total_traces > 0 else 0.0
 
         # 3. Métricas de Campanhas

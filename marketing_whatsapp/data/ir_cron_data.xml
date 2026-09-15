@@ -21,14 +21,14 @@
             <field name="active" eval="True"/>
         </record>
 
-        <!-- Cron de Atualização de Status dos Contatos a Cada 1 Hora -->
+        <!-- Cron de Atualização de Status dos Contatos a Cada 5 Minutos -->
         <record id="ir_cron_whatsapp_sync_contact_status" model="ir.cron">
-            <field name="name">Marketing WhatsApp: Atualizar Status de Envio, Leitura e Respostas (1 Hora)</field>
+            <field name="name">Marketing WhatsApp: Atualizar Status de Envio, Leitura e Respostas (5 Minutos)</field>
             <field name="model_id" ref="mass_mailing.model_mailing_contact"/>
             <field name="state">code</field>
             <field name="code">model._cron_sync_whatsapp_contact_statuses()</field>
-            <field name="interval_number">1</field>
-            <field name="interval_type">hours</field>
+            <field name="interval_number">5</field>
+            <field name="interval_type">minutes</field>
             <field name="active" eval="True"/>
         </record>
     </data>
