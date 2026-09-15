@@ -42,6 +42,11 @@ class MailingMailing(models.Model):
         string="URL Pública da Mídia",
         help="URL direta para a imagem ou documento caso prefira não carregar o arquivo no Odoo."
     )
+    company_id = fields.Many2one(
+        'res.company',
+        string="Empresa",
+        default=lambda self: (self.whatsapp_account_id.company_id if hasattr(self, 'whatsapp_account_id') and self.whatsapp_account_id else self.env.company)
+    )
 
     # Variáveis dinâmicas para interpolação
     whatsapp_var1_field = fields.Selection([
@@ -97,8 +102,13 @@ class MailingMailing(models.Model):
 
     def _get_active_subscription(self):
         """Busca assinatura de WhatsApp ativa associada à empresa do usuário"""
+        company = (
+            (self.whatsapp_account_id and self.whatsapp_account_id.company_id)
+            or (hasattr(self, 'company_id') and self.company_id)
+            or self.env.company
+        )
         return self.env['whatsapp.subscription'].sudo().search([
-            ('company_id', '=', self.company_id.id),
+            ('company_id', '=', company.id),
             ('state', '=', 'active')
         ], limit=1)
 
