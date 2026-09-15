@@ -16,10 +16,10 @@ class MailingContact(models.Model):
     custom_var2 = fields.Char(string="Variável Personalizada 2")
     custom_var3 = fields.Char(string="Variável Personalizada 3")
 
-    @api.depends('mobile', 'phone', 'country_id')
+    @api.depends('mobile', 'country_id')
     def _compute_mobile_whatsapp(self):
         for contact in self:
-            raw_phone = contact.mobile or contact.phone
+            raw_phone = contact.mobile or getattr(contact, 'phone', False) or getattr(contact, 'phone_sanitized', False)
             if not raw_phone:
                 contact.mobile_whatsapp = False
                 continue
