@@ -3,6 +3,8 @@ import base64
 import json
 import logging
 import time
+from datetime import datetime
+import pytz
 import requests
 import phonenumbers
 from odoo import api, fields, models, _
@@ -17,6 +19,13 @@ class MailingMailing(models.Model):
     mailing_type = fields.Selection(selection_add=[
         ('whatsapp', 'Marketing WhatsApp')
     ], ondelete={'whatsapp': 'set default'})
+
+    is_paused = fields.Boolean(
+        string="Campanha Pausada",
+        default=False,
+        help="Indica se o envio da campanha foi pausado manualmente."
+    )
+
 
     whatsapp_account_id = fields.Many2one(
         'whatsapp.account',
@@ -247,18 +256,73 @@ class MailingMailing(models.Model):
 
         return recipients
 
+    def action_pause_whatsapp(self):
+        """Pausa os disparos da campanha imediatamente"""
+        for mailing in self:
+            mailing.write({'is_paused': True, 'state': 'in_queue'})
+            mailing.message_post(body=_("⏸️ <b>Campanha Pausada pelo Usuário</b>. Nenhum novo envio será feito até que a campanha seja retomada."))
+
+    def action_resume_whatsapp(self):
+        """Retoma os disparos da campanha"""
+        for mailing in self:
+            mailing.write({'is_paused': False, 'state': 'sending'})
+            mailing.message_post(body=_("▶️ <b>Campanha Retomada</b>. Os disparos serão processados dentro da janela comercial (08:00 às 17:00)."))
+            if mailing._is_within_dispatch_window():
+                mailing._process_whatsapp_queue(batch_limit=50)
+
+    @api.model
+    def _is_within_dispatch_window(self):
+        """Verifica se o momento atual está dentro da janela de disparo comercial (ex: 08:00 às 17:00 Horário de Brasília)"""
+        ICPSudo = self.env['ir.config_parameter'].sudo()
+        window_enabled = ICPSudo.get_param('marketing_whatsapp.dispatch_window_enabled', 'True').lower() in ('true', '1', 'yes')
+        if not window_enabled:
+            return True
+
+        tz_name = ICPSudo.get_param('marketing_whatsapp.dispatch_timezone', 'America/Sao_Paulo') or 'America/Sao_Paulo'
+        try:
+            tz = pytz.timezone(tz_name)
+        except Exception:
+            tz = pytz.timezone('America/Sao_Paulo')
+
+        now_local = datetime.now(tz)
+        try:
+            start_hour = int(ICPSudo.get_param('marketing_whatsapp.dispatch_window_start', 8))
+        except (ValueError, TypeError):
+            start_hour = 8
+        try:
+            end_hour = int(ICPSudo.get_param('marketing_whatsapp.dispatch_window_end', 17))
+        except (ValueError, TypeError):
+            end_hour = 17
+
+        current_hour = now_local.hour
+        # Janela permitida: das start_hour até end_hour (ex: 08:00:00 até 16:59:59)
+        return start_hour <= current_hour < end_hour
+
     @api.model
     def _cron_process_whatsapp_queue(self):
         """Método chamado pelo Scheduled Action (ir.cron) para disparar lotes pendentes"""
+        if not self._is_within_dispatch_window():
+            _logger.info("Marketing WhatsApp: Fora da janela de disparo permitida (08:00 às 17:00 Horário de Brasília). Disparos em pausa até a próxima janela.")
+            return
+
         active_mailings = self.search([
             ('mailing_type', '=', 'whatsapp'),
-            ('state', 'in', ['in_queue', 'sending'])
+            ('state', 'in', ['in_queue', 'sending']),
+            ('is_paused', '=', False)
         ])
         for mailing in active_mailings:
             mailing._process_whatsapp_queue(batch_limit=50)
 
     def _process_whatsapp_queue(self, batch_limit=50):
         self.ensure_one()
+        if self.is_paused:
+            _logger.info("Campanha %s está pausada pelo usuário. Ignorando lote.", self.name or self.subject)
+            return
+
+        if not self._is_within_dispatch_window():
+            _logger.info("Campanha %s: Fora da janela de disparo (08:00 às 17:00). Disparo suspenso até a próxima janela.", self.name or self.subject)
+            return
+
         TraceModel = self.env['mailing.trace']
         pending_traces = TraceModel.search([
             ('mass_mailing_id', '=', self.id),
@@ -269,6 +333,7 @@ class MailingMailing(models.Model):
             if self.state in ['in_queue', 'sending']:
                 self.write({'state': 'done'})
             return
+
 
         account = self.whatsapp_account_id
         template = self.whatsapp_template_id

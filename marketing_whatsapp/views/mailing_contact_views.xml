@@ -38,7 +38,7 @@ action = model.action_clean_duplicates_and_empty()
     <record id="action_whatsapp_mailing_contacts" model="ir.actions.act_window">
         <field name="name">Contatos de WhatsApp</field>
         <field name="res_model">mailing.contact</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="domain">['|', ('mobile_whatsapp', '!=', False), ('mobile', '!=', False)]</field>
         <field name="context">{'search_default_filter_has_whatsapp': 1}</field>
         <field name="help" type="html">

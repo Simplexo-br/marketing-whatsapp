@@ -9,12 +9,19 @@
                 <header>
                     <button name="action_send_whatsapp_now" string="Enviar Agora" type="object" class="btn-primary" invisible="state not in ['draft', 'in_queue']" confirm="Deseja iniciar o envio desta campanha para todos os contatos válidos da lista?"/>
                     <button name="action_put_in_queue" string="Colocar na Fila de Disparo" type="object" class="btn-secondary" invisible="state != 'draft'"/>
+                    <button name="action_pause_whatsapp" string="Pausar Disparos" type="object" class="btn-warning" invisible="state != 'sending' or is_paused" icon="fa-pause"/>
+                    <button name="action_resume_whatsapp" string="Retomar Disparos" type="object" class="btn-success" invisible="not is_paused and state != 'in_queue'" icon="fa-play"/>
                     <button name="action_test_whatsapp" string="Enviar Teste para Celular" type="object" class="btn-info" icon="fa-mobile"/>
                     <button name="action_cancel" string="Cancelar" type="object" invisible="state not in ['in_queue', 'sending']"/>
                     <button name="action_retry_failed" string="Reenviar Falhas" type="object" class="btn-warning" invisible="state != 'done' or whatsapp_failed_count == 0"/>
                     <field name="state" widget="statusbar" statusbar_visible="draft,in_queue,sending,done"/>
                 </header>
                 <sheet>
+                    <field name="is_paused" invisible="1"/>
+                    <div class="alert alert-warning text-center" role="alert" invisible="not is_paused">
+                        <i class="fa fa-pause-circle"/> <b>Esta campanha está PAUSADA.</b> Nenhum envio está sendo realizado. Clique em <b>"Retomar Disparos"</b> para continuar.
+                    </div>
+
                     <div class="oe_button_box" name="button_box">
                         <button class="oe_stat_button" type="object" name="action_view_whatsapp_traces" icon="fa-paper-plane-o">
                             <div class="o_field_widget o_stat_info">

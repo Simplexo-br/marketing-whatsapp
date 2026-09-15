@@ -31,6 +31,21 @@
                             <field name="whatsapp_auto_blacklist_on_stop"/>
                         </setting>
                     </block>
+
+                    <block title="⏰ Janela de Disparo Comercial (08:00 às 17:00)" id="whatsapp_dispatch_window_block">
+                        <setting id="whatsapp_window_enabled" string="Ativar Janela Comercial de Disparos" help="Se ativado, campanhas e filas de WhatsApp só enviarão mensagens dentro do horário permitido.">
+                            <field name="whatsapp_dispatch_window_enabled"/>
+                        </setting>
+                        <setting id="whatsapp_window_start" string="Horário de Início (Manhã)" help="Horário que os disparos começam (padrão: 8 = 08:00)." invisible="not whatsapp_dispatch_window_enabled">
+                            <field name="whatsapp_dispatch_window_start"/>
+                        </setting>
+                        <setting id="whatsapp_window_end" string="Horário de Término (Fim da Tarde)" help="Horário que os disparos são interrompidos até o dia seguinte (padrão: 17 = 17:00)." invisible="not whatsapp_dispatch_window_enabled">
+                            <field name="whatsapp_dispatch_window_end"/>
+                        </setting>
+                        <setting id="whatsapp_window_tz" string="Fuso Horário dos Disparos" help="Fuso horário de referência para a janela (ex: America/Sao_Paulo)." invisible="not whatsapp_dispatch_window_enabled">
+                            <field name="whatsapp_dispatch_timezone"/>
+                        </setting>
+                    </block>
                 </app>
             </xpath>
         </field>
