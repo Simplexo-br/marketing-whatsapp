@@ -91,7 +91,7 @@ class WhatsAppTemplate(models.Model):
                 preview += "<div style='background: #ffffff; border-radius: 8px; padding: 10px; position: relative; box-shadow: 0 1px 2px rgba(0,0,0,0.1);'>"
 
                 if record.header_type == 'image':
-                    preview += "<div style='background: #f0f2f5; height: 140px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #54656f; margin-bottom: 8px;'>📷 [Imagem do Cabeçalho]</div>"
+                    preview += "<div style='border-radius: 6px; overflow: hidden; margin-bottom: 8px;'><img src='/marketing_whatsapp/static/src/img/simplexo_banner_marketing.png' style='width: 100%; height: auto; display: block; border-radius: 6px;' alt='Banner WhatsApp'/></div>"
                 elif record.header_type == 'document':
                     preview += "<div style='background: #f0f2f5; height: 60px; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #54656f; margin-bottom: 8px;'>📄 [Documento PDF]</div>"
                 elif record.header_type == 'video':
@@ -109,7 +109,8 @@ class WhatsAppTemplate(models.Model):
 
                 if record.button_ids:
                     for btn in record.button_ids:
-                        preview += f"<div style='margin-top: 4px; background: #ffffff; border-radius: 6px; padding: 8px; text-align: center; color: #00a884; font-weight: 500; font-size: 13px; box-shadow: 0 1px 1px rgba(0,0,0,0.08);'>{btn.name}</div>"
+                        btn_icon = "🌐 " if btn.button_type == 'URL' else ("↩️ " if btn.button_type == 'QUICK_REPLY' else "📞 ")
+                        preview += f"<div style='margin-top: 4px; background: #ffffff; border-radius: 6px; padding: 8px; text-align: center; color: #00a884; font-weight: 500; font-size: 13px; box-shadow: 0 1px 1px rgba(0,0,0,0.08);'>{btn_icon}{btn.name}</div>"
 
                 preview += "</div>"
                 record.preview_html = preview

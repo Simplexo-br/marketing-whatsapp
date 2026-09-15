@@ -84,11 +84,20 @@ class MailingMailing(models.Model):
     whatsapp_read_count = fields.Integer(string="Lidos", compute='_compute_whatsapp_stats')
     whatsapp_failed_count = fields.Integer(string="Falhas", compute='_compute_whatsapp_stats')
 
-    @api.depends('whatsapp_template_id', 'whatsapp_media_attachment_id')
+    @api.depends('whatsapp_template_id', 'whatsapp_media_attachment_id', 'whatsapp_media_url')
     def _compute_whatsapp_preview_html(self):
         for mailing in self:
             if mailing.whatsapp_template_id:
-                mailing.whatsapp_preview_html = mailing.whatsapp_template_id.preview_html
+                html = mailing.whatsapp_template_id.preview_html or ''
+                if mailing.whatsapp_template_id.header_type == 'image':
+                    custom_img = False
+                    if mailing.whatsapp_media_url:
+                        custom_img = mailing.whatsapp_media_url
+                    elif mailing.whatsapp_media_attachment_id:
+                        custom_img = f"/web/content/{mailing.whatsapp_media_attachment_id.id}"
+                    if custom_img:
+                        html = html.replace('/marketing_whatsapp/static/src/img/simplexo_banner_marketing.png', custom_img)
+                mailing.whatsapp_preview_html = html
             else:
                 mailing.whatsapp_preview_html = "<div style='color: #888; font-style: italic; padding: 20px;'>Selecione um template aprovado para visualizar a mensagem.</div>"
 
@@ -412,6 +421,8 @@ class MailingMailing(models.Model):
                 elif self.whatsapp_media_attachment_id:
                     media_url = f"{base_url}/web/content/{self.whatsapp_media_attachment_id.id}"
                     media_param = {"link": media_url}
+                elif template.header_type == 'image':
+                    media_param = {"link": f"{base_url}/marketing_whatsapp/static/src/img/simplexo_banner_marketing.png"}
 
                 if media_param:
                     components.append({
