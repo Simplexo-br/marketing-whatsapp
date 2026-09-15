@@ -1,0 +1,35 @@
+# -*- coding: utf-8 -*-
+import subprocess
+import os
+
+remote_script = """# -*- coding: utf-8 -*-
+import sys
+sys.path.insert(0, '/opt/odoo/odoo')
+import odoo
+from odoo import api, SUPERUSER_ID
+
+odoo.tools.config.parse_config(['-c', '/opt/odoo/conf/simplexo.conf', '-d', 'simplexo'])
+registry = odoo.registry('simplexo')
+with registry.cursor() as cr:
+    env = api.Environment(cr, SUPERUSER_ID, {})
+    Trace = env['mailing.trace']
+    pending = Trace.search([('mass_mailing_id', '=', 134), ('whatsapp_status', '=', 'outgoing')])
+    long_traces = [t for t in pending if len(''.join(c for c in t.whatsapp_recipient_number if c.isdigit())) > 15]
+    print(f"Total de traces pendentes com mais de 15 dígitos: {len(long_traces)}")
+    for t in long_traces[:10]:
+        print(f"  Trace ID: {t.id} | Raw: {t.whatsapp_recipient_number}")
+"""
+
+ssh_key = os.path.expanduser("~/.ssh/simplexo_gpt_desktop")
+bastion = "fellipe_ramalho@35.224.220.67"
+internal_server = "fellipe_ramalho@34.45.88.55"
+
+cmd = [
+    "ssh", "-o", "BatchMode=yes", "-o", "StrictHostKeyChecking=no", "-o", "ConnectTimeout=15",
+    "-i", ssh_key, bastion,
+    f"ssh -o BatchMode=yes -o StrictHostKeyChecking=no -i ~/.ssh/simplexo_aios_production {internal_server} 'sudo -E /opt/odoo/venv/bin/python3'"
+]
+
+proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+stdout_bytes, stderr_bytes = proc.communicate(input=remote_script.encode('utf-8'), timeout=60)
+print(stdout_bytes.decode('utf-8', errors='replace').encode('ascii', errors='replace').decode('ascii'))
