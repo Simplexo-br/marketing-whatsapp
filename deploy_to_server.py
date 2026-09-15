@@ -42,8 +42,8 @@ subprocess.run("sudo /opt/odoo/venv/bin/pip install phonenumbers requests", shel
 print("4. Parando servico odoo-simplexo...")
 subprocess.run("sudo systemctl stop odoo-simplexo", shell=True)
 
-print("5. Instalando/Atualizando modulo {module_name} no banco de dados simplexo...")
-up_cmd = "/opt/odoo/venv/bin/python3 /opt/odoo/odoo/odoo-bin -c /opt/odoo/conf/simplexo.conf -d simplexo -i {module_name} --stop-after-init"
+print("5. Atualizando modulo {module_name} no banco de dados simplexo...")
+up_cmd = "sudo -u simplexo /opt/odoo/venv/bin/python3 /opt/odoo/odoo/odoo-bin -c /opt/odoo/conf/simplexo.conf -d simplexo -u {module_name} --stop-after-init"
 p = subprocess.run(up_cmd, shell=True, capture_output=True, text=True)
 print("Codigo de retorno do comando Odoo:", p.returncode)
 if p.stderr:

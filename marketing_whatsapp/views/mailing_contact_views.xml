@@ -8,6 +8,7 @@
         <field name="arch" type="xml">
             <xpath expr="//search" position="inside">
                 <separator/>
+                <filter string="Apenas com WhatsApp" name="filter_has_whatsapp" domain="['|', ('mobile_whatsapp', '!=', False), ('mobile', '!=', False)]"/>
                 <filter string="WhatsApp: Enviados" name="filter_wa_sent" domain="[('wa_status_sent', '=', True)]"/>
                 <filter string="WhatsApp: Visualizados (Lidos)" name="filter_wa_read" domain="[('wa_status_read', '=', True)]"/>
                 <filter string="WhatsApp: Respondidos" name="filter_wa_replied" domain="[('wa_status_replied', '=', True)]"/>
@@ -18,6 +19,32 @@
                     <field name="wa_status" icon="fa-whatsapp" enable_counters="1" select="one" string="Status WhatsApp"/>
                 </searchpanel>
             </xpath>
+        </field>
+    </record>
+
+    <!-- Ação de Servidor para Higienizar Base (Remover duplicidades e contatos vazios) -->
+    <record id="action_server_clean_duplicates_and_empty" model="ir.actions.server">
+        <field name="name">🧹 Higienizar Base (Remover Duplicidades e Vazios)</field>
+        <field name="model_id" ref="mass_mailing.model_mailing_contact"/>
+        <field name="binding_model_id" ref="mass_mailing.model_mailing_contact"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = model.action_clean_duplicates_and_empty()
+        </field>
+    </record>
+
+    <!-- Ação de Janela com filtro padrão para Contatos com WhatsApp -->
+    <record id="action_whatsapp_mailing_contacts" model="ir.actions.act_window">
+        <field name="name">Contatos de WhatsApp</field>
+        <field name="res_model">mailing.contact</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">['|', ('mobile_whatsapp', '!=', False), ('mobile', '!=', False)]</field>
+        <field name="context">{'search_default_filter_has_whatsapp': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Nenhum contato com WhatsApp cadastrado!
+            </p>
         </field>
     </record>
 

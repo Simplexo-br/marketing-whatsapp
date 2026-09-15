@@ -183,3 +183,71 @@ class TestWhatsAppCampaign(TransactionCase):
         self.assertIsNotNone(card2_btn)
         self.assertEqual(card2_btn['sub_type'], 'quick_reply')
         self.assertEqual(card2_btn['parameters'][0]['payload'], 'INTERESSE_ERP')
+
+    def test_contact_phoneless_protection(self):
+        """Testa que contatos sem telefone não recebem status de envio/entrega/leitura ativo"""
+        contact = self.ContactModel.create({
+            'name': 'Contato Sem Telefone',
+            'email': 'semtelefone@teste.com',
+            'wa_status_delivered': True,
+            'wa_status': 'delivered'
+        })
+        self.assertFalse(contact.wa_status_delivered, "Contato sem telefone não pode ter wa_status_delivered=True")
+        self.assertEqual(contact.wa_status, 'not_sent', "Contato sem telefone deve ter wa_status='not_sent'")
+
+        # Tentativa de escrita direta
+        contact.write({
+            'wa_status': 'delivered',
+            'wa_status_delivered': True,
+            'wa_status_read': True,
+        })
+        self.assertFalse(contact.wa_status_delivered)
+        self.assertFalse(contact.wa_status_read)
+        self.assertEqual(contact.wa_status, 'not_sent')
+
+    def test_contact_deduplication_and_list_merge(self):
+        """Testa a rotina de desduplicação: mesclagem de listas e remoção de registros redundantes"""
+        ListModel = self.env['mailing.list']
+        list_a = ListModel.create({'name': 'Lista A Teste'})
+        list_b = ListModel.create({'name': 'Lista B Teste'})
+
+        # Cria 2 contatos com o mesmo telefone em listas diferentes
+        c1 = self.ContactModel.create({
+            'name': 'Cliente Teste Duplicado 1',
+            'mobile': '11988887777',
+            'list_ids': [(4, list_a.id)],
+        })
+        c2 = self.ContactModel.create({
+            'name': 'Cliente Teste Duplicado 2',
+            'mobile': '+5511988887777',
+            'company_name': 'Empresa Unificada',
+            'list_ids': [(4, list_b.id)],
+            'wa_status': 'read',
+            'wa_status_read': True,
+        })
+
+        # Cria 1 contato sem telefone
+        c3 = self.ContactModel.create({
+            'name': 'Cliente Sem Telefone Deletar',
+            'email': 'deletar@teste.com',
+        })
+
+        # Executa ação de higienização
+        self.ContactModel.action_clean_duplicates_and_empty()
+
+        # Verifica que c3 foi deletado
+        self.assertFalse(c3.exists())
+
+        # Verifica que apenas 1 contato existe com esse telefone
+        remaining = self.ContactModel.search([('mobile_whatsapp', '=', '+5511988887777')])
+        self.assertEqual(len(remaining), 1, "Deve existir exatamente 1 contato após a desduplicação")
+
+        master = remaining[0]
+        # Ambas as listas devem estar unificadas
+        self.assertIn(list_a.id, master.list_ids.ids)
+        self.assertIn(list_b.id, master.list_ids.ids)
+        # O status mais avançado (read) deve ser mantido
+        self.assertEqual(master.wa_status, 'read')
+        self.assertTrue(master.wa_status_read)
+        self.assertEqual(master.company_name, 'Empresa Unificada')
+

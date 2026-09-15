@@ -40,9 +40,9 @@
               sequence="1"/>
 
     <menuitem id="menu_whatsapp_mailing_contacts"
-              name="Todos os Contatos"
+              name="Contatos WhatsApp"
               parent="menu_whatsapp_audiences"
-              action="mass_mailing.action_view_mass_mailing_contacts"
+              action="action_whatsapp_mailing_contacts"
               sequence="2"/>
 
     <menuitem id="menu_whatsapp_import_wizard"

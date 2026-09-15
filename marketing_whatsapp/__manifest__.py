@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'Marketing WhatsApp',
-    'version': '18.0.1.1.0',
+    'version': '18.0.1.2.0',
     'category': 'Marketing/WhatsApp',
     'summary': 'Disparos em massa de campanhas de WhatsApp via Meta Cloud API Oficial com Templates em Carrossel, planos de assinatura, faturamento automático e proteção Anti-Ban',
     'description': """
@@ -30,6 +30,7 @@ Principais Recursos:
         'mail',
         'account',
         'mass_mailing',
+        'mass_mailing_sms',
         'phone_validation',
         'crm',
         'contacts',

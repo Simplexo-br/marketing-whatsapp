@@ -103,10 +103,15 @@ class ImportWhatsAppContacts(models.TransientModel):
             var1 = row.get(col_var1_key, '') if col_var1_key in row else ''
             var2 = row.get(col_var2_key, '') if col_var2_key in row else ''
 
-            # Busca se já existe contato com esse número na base
-            existing_contact = ContactModel.search([
-                ('mobile_whatsapp', '=', sanitized_phone)
-            ], limit=1)
+            # Busca se já existe contato com esse número na base de forma ultra-robusta
+            clean_digits = ''.join(c for c in sanitized_phone if c.isdigit())
+            domain = [
+                '|', '|',
+                ('mobile_whatsapp', '=', sanitized_phone),
+                ('mobile', '=', sanitized_phone),
+                ('mobile_whatsapp', 'ilike', clean_digits[-8:] if len(clean_digits) >= 8 else clean_digits)
+            ]
+            existing_contact = ContactModel.search(domain, limit=1)
 
             vals = {
                 'name': name,
