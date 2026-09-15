@@ -120,13 +120,27 @@ class WhatsappDashboard(models.AbstractModel):
 
         # 5. Status da Conta Meta WhatsApp
         account = self.env['whatsapp.account'].search([], limit=1)
+        tier_map = {
+            'TIER_250': 250,
+            'TIER_1K': 1000,
+            'TIER_10K': 10000,
+            'TIER_100K': 100000,
+            'TIER_UNLIMITED': 1000000,
+        }
+        daily_limit = 1000
+        if account:
+            if hasattr(account, 'daily_limit') and account.daily_limit:
+                daily_limit = account.daily_limit
+            elif hasattr(account, 'messaging_limit_tier') and account.messaging_limit_tier:
+                daily_limit = tier_map.get(account.messaging_limit_tier, 1000)
+
         account_data = {
             'has_account': bool(account),
             'name': account.name if account else 'Simplexo Tecnologia (+55 11 5028-8495)',
             'phone_number': account.phone_number if account else '+55 11 5028-8495',
             'status': account.status if account else 'connected',
             'quality_rating': account.quality_rating if account else 'GREEN',
-            'daily_limit': account.daily_limit if account else 1000,
+            'daily_limit': daily_limit,
             'pacing_rate': '125 mensagens / hora (~28s)',
         }
 
@@ -197,7 +211,7 @@ class WhatsappDashboard(models.AbstractModel):
                 'fail_rate': fail_rate,
                 'total_lists': total_lists,
                 'total_templates': total_templates,
-                'total_campaigns': len(campaigns) or 1,
+                'total_campaigns': Mailing.search_count(domain_mailing),
             },
             'subscription': sub_data,
             'account': account_data,

@@ -41,6 +41,19 @@ class WhatsAppAccount(models.Model):
         ('TIER_100K', '100.000 conversas / 24h (Tier 3)'),
         ('TIER_UNLIMITED', 'Ilimitado (Tier 4)'),
     ], string="Limite de Envio Diário", default='TIER_1K', readonly=True, tracking=True)
+    daily_limit = fields.Integer(string="Limite Diário Numérico", compute='_compute_daily_limit')
+
+    @api.depends('messaging_limit_tier')
+    def _compute_daily_limit(self):
+        tier_map = {
+            'TIER_250': 250,
+            'TIER_1K': 1000,
+            'TIER_10K': 10000,
+            'TIER_100K': 100000,
+            'TIER_UNLIMITED': 999999,
+        }
+        for record in self:
+            record.daily_limit = tier_map.get(record.messaging_limit_tier, 1000)
 
     last_connection_test = fields.Datetime(string="Último Teste de Conexão", readonly=True)
     error_message = fields.Text(string="Mensagem de Erro", readonly=True)
