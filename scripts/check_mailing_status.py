@@ -1,22 +1,22 @@
-# -*- coding: utf-8 -*-
 remote_script = """# -*- coding: utf-8 -*-
 import sys
 sys.path.insert(0, '/opt/odoo/odoo')
 import odoo
 
 odoo.tools.config.parse_config(['-c', '/opt/odoo/conf/simplexo.conf', '-d', 'simplexo'])
-db = odoo.sql_db.db_connect('simplexo')
-with db.cursor() as cr:
-    ids = [24373, 26193, 22573, 22568, 24019, 25551, 23039]
-    print("=== VERIFYING UPDATED MAILING CONTACTS ===")
-    cr.execute("SELECT id, name, wa_status, wa_status_opt_out, wa_opt_out_date FROM mailing_contact WHERE id = ANY(%s)", [ids])
-    for r in cr.fetchall():
-        print("  Contact:", r)
-
-    print("\\n=== VERIFYING SUBSCRIPTIONS ===")
-    cr.execute("SELECT contact_id, opt_out, opt_out_datetime FROM mailing_subscription WHERE contact_id = ANY(%s)", [ids])
-    for r in cr.fetchall():
-        print("  Subscription:", r)
+registry = odoo.registry('simplexo')
+with registry.cursor() as cr:
+    env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
+    print("=== RECENT MAILING STATUS ===")
+    mailings = env['mailing.mailing'].search([], order='id desc', limit=5)
+    for m in mailings:
+        print(f"Mailing ID {m.id}: {m.subject} (State: {m.state}, Sent: {m.sent_date})")
+        
+    print("\\n=== RECENT AI RUNS ===")
+    if 'simplexo.aios.whatsapp.ai.run' in env:
+        runs = env['simplexo.aios.whatsapp.ai.run'].search([], order='id desc', limit=5)
+        for r in runs:
+            print(f"Run ID: {r.id} | State: {r.state} | Intent: {r.intent} | Handoff: {r.requires_handoff}")
 """
 
 import subprocess
